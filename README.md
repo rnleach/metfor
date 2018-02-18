@@ -1,2 +1,2 @@
 # metfor
-Meteorological formulas in rust.
+Meteorological formulas and constants in rust.
