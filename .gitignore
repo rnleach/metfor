@@ -1,0 +1,20 @@
+//
+// cargo and rustc
+//
+/target/
+**/*.rs.bk
+Cargo.lock
+
+//
+// Sublime editor
+//
+*.sublime-workspace
+
+//
+// OS specific
+//
+.DS_Store
+
+/target/
+**/*.rs.bk
+Cargo.lock

@@ -1,0 +1,11 @@
+[package]
+name = "metfor"
+version = "0.0.1"
+authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
+description = """Meteorological formulas and constants."""
+repository = "https://github.com/rnleach/metfor.git"
+readme = "README.md"
+license-file = "LICENSE"
+exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*"]
+categories = ["science"]
+keywords = ["weather","meteorology"]
