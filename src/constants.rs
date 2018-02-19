@@ -21,6 +21,3 @@ pub const cv: f64 = 717.0;
 
 /// Ratio of cp and cv. (unitless)
 pub const gamma: f64 = cp / cv;
-
-/// Latent heat of condensation at 0C. (J kg<sup>-1</sup>)
-pub const Lc: f64 = 2.5e6;
