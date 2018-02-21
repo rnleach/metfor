@@ -315,17 +315,23 @@ mod test {
     }
 
     #[test]
-    fn test_find_root() {
-        assert!(approx_equal(
-            1.0,
-            find_root(&|x| x * x - 1.0, 2.0, 0.0),
-            1.0e-10
-        ));
-        assert!(approx_equal(
-            -1.0,
-            find_root(&|x| x * x - 1.0, -2.0, 0.0),
-            1.0e-10
-        ));
+    fn test_celsius_to_kelvin(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_kelvin_to_celsius(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_celsius_to_f(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_f_to_celsius(){
+        unimplemented!()
     }
 
     #[test]
@@ -339,7 +345,27 @@ mod test {
     }
 
     #[test]
-    fn test_vapor_pressure() {
+    fn test_temperature_c_from_theta(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_temperature_c_from_theta_and_back_by_theta_kelvin(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_vapor_pressure_water(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_dew_point_from_vapor_pressure(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_vapor_pressure_water_and_back_by_dew_point_from_vapor_pressure() {
         for &dp in [-20.0, -10.0, 0.0, 10.0, 20.0].iter() {
             let forward = vapor_pressure_water(dp);
             let back = dew_point_from_vapor_pressure(forward);
@@ -350,7 +376,22 @@ mod test {
     }
 
     #[test]
-    fn test_mw() {
+    fn test_rh(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_mixing_ratio(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_dew_point_from_p_and_mw(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_mixing_ration_and_back_by_dew_point_from_p_and_mw() {
         for &press in [1000.0, 800.0, 700.0, 500.0, 300.0].iter() {
             for &dp in [-20.0, -10.0, 0.0, 10.0, 20.0].iter() {
                 let mw = mixing_ratio(dp, press);
@@ -363,7 +404,42 @@ mod test {
     }
 
     #[test]
-    fn test_wet_bulb() {
+    fn test_temperature_kelvin_at_lcl(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_pressure_and_temperature_at_lcl(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_pressure_hpa_at_lcl(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_specific_humidity(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_theta_e_kelvin(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_theta_e_saturated_kelvin(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_wet_bulb(){
+        unimplemented!()
+    }
+
+    #[test]
+    fn test_wet_bulb_dp_temp_consistency() {
         for &press in [1000.0, 906.4, 850.0, 700.0,314.6].iter() {
             for &t in [-45.46,-20.0, -10.0, -5.0, -1.46, 0.0, 5.0, 10.0, 20.0].iter() {
                 for &dp in [-59.49,-21.0, -11.0, -5.1, -3.06, 0.0, 4.9, 9.9, 20.0].iter() {
@@ -378,5 +454,19 @@ mod test {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_find_root() {
+        assert!(approx_equal(
+            1.0,
+            find_root(&|x| x * x - 1.0, 2.0, 0.0),
+            1.0e-10
+        ));
+        assert!(approx_equal(
+            -1.0,
+            find_root(&|x| x * x - 1.0, -2.0, 0.0),
+            1.0e-10
+        ));
     }
 }
