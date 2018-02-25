@@ -113,6 +113,10 @@ pub fn rh(temperature_c: f64, dew_point_c: f64) -> f64 {
 #[inline]
 pub fn mixing_ratio(dew_point_c: f64, pressure_hpa: f64) -> f64 {
     let vp = vapor_pressure_water(dew_point_c);
+    assert!(
+        vp < pressure_hpa,
+        "Vapor pressure greater than total pressure."
+    );
     R / Rv * vp / (pressure_hpa - vp)
 }
 
@@ -210,7 +214,7 @@ pub fn specific_humidity(dew_point_c: f64, pressure_hpa: f64) -> f64 {
 pub fn theta_e_kelvin(temperature_c: f64, dew_point_c: f64, pressure_hpa: f64) -> f64 {
     let theta = theta_kelvin(pressure_hpa, temperature_c);
     let t_lcl = temperature_kelvin_at_lcl(temperature_c, dew_point_c);
-    let qs = specific_humidity(temperature_c, pressure_hpa);
+    let qs = specific_humidity(dew_point_c, pressure_hpa);
     let lc = latent_heat_of_condensation(temperature_c);
 
     theta * (1.0 + lc * qs / (cp * t_lcl))
@@ -508,60 +512,121 @@ mod test {
 
     #[test]
     fn test_mixing_ratio() {
-        unimplemented!()
+        for p in pressure_levels() {
+            for dp in temperatures() {
+                if vapor_pressure_water(dp) >= p {
+                    continue;
+                }
+
+                let mw = mixing_ratio(dp, p);
+                assert!(mw > 0.0);
+            }
+        }
     }
 
     #[test]
-    fn test_dew_point_from_p_and_mw() {
-        unimplemented!()
-    }
-
-    #[test]
-    fn test_mixing_ration_and_back_by_dew_point_from_p_and_mw() {
+    fn test_mixing_ratio_and_back_by_dew_point_from_p_and_mw() {
         for press in pressure_levels() {
             for dp in temperatures() {
+                if vapor_pressure_water(dp) >= press {
+                    continue;
+                }
+
                 let mw = mixing_ratio(dp, press);
                 let back = dew_point_from_p_and_mw(press, mw);
 
-                println!("{} ~= {}", dp, back);
-                assert!(approx_equal(dp, back, 1.0e-3), "Failed there and back!");
+                assert_approx_eq!(dp, back, "Failed there and back!");
             }
         }
     }
 
     #[test]
     fn test_temperature_kelvin_at_lcl() {
-        unimplemented!()
+        for t in temperatures() {
+            for dp in temperatures().filter(|dp| *dp <= t) {
+                let lcl_t = temperature_kelvin_at_lcl(t, dp);
+                assert!(lcl_t >= 0.0);
+                assert!(lcl_t <= celsius_to_kelvin(t));
+            }
+        }
     }
 
     #[test]
     fn test_pressure_and_temperature_at_lcl() {
-        unimplemented!()
+        for p in pressure_levels() {
+            for t in temperatures() {
+                for dp in temperatures().filter(|dp| *dp <= t) {
+                    let (p_lcl, t_lcl) = pressure_and_temperature_at_lcl(t, dp, p);
+                    let k = celsius_to_kelvin(t);
+                    assert!(p_lcl <= p);
+                    assert!(t_lcl <= k);
+                    assert!(p_lcl > 0.0);
+                    assert!(t_lcl > 0.0);
+                }
+            }
+        }
     }
 
     #[test]
     fn test_pressure_hpa_at_lcl() {
-        unimplemented!()
+        for p in pressure_levels() {
+            for t in temperatures() {
+                for dp in temperatures().filter(|dp| *dp <= t) {
+                    let p_lcl = pressure_hpa_at_lcl(t, dp, p);
+                    assert!(p_lcl <= p);
+                    assert!(p_lcl > 0.0);
+                }
+            }
+        }
     }
 
     #[test]
     fn test_specific_humidity() {
-        unimplemented!()
+        for p in pressure_levels() {
+            for dp in temperatures().filter(|dp| vapor_pressure_water(*dp) <= p) {
+                let sh = specific_humidity(dp, p);
+                assert!(sh > 0.0 && sh <= 1.0);
+            }
+        }
     }
 
     #[test]
     fn test_theta_e_kelvin() {
-        unimplemented!()
+        for p in pressure_levels() {
+            for t in temperatures() {
+                for dp in temperatures().filter(|dp| *dp <= t && vapor_pressure_water(*dp) < p) {
+                    let theta = theta_kelvin(p, t);
+                    let theta_e = theta_e_kelvin(t, dp, p);
+                    assert!(theta <= theta_e);
+                }
+            }
+        }
     }
 
     #[test]
     fn test_theta_e_saturated_kelvin() {
-        unimplemented!()
+        for p in pressure_levels() {
+            for t in temperatures().filter(|t| vapor_pressure_water(*t) < p) {
+                let theta = theta_kelvin(p, t);
+                let theta_es = theta_e_saturated_kelvin(p, t);
+                println!("p={} t={} theta={} theta_es={}", t, p, theta, theta_es);
+                assert!(theta <= theta_es);
+            }
+        }
     }
 
     #[test]
-    fn test_wet_bulb() {
-        unimplemented!()
+    fn test_theta_e_saturated_theta_e_theta_relationships() {
+        for p in pressure_levels() {
+            for t in temperatures() {
+                for dp in temperatures().filter(|dp| *dp <= t && vapor_pressure_water(t) < p) {
+                    let theta = theta_kelvin(p, t);
+                    let theta_e = theta_e_kelvin(t, dp, p);
+                    let theta_es = theta_e_saturated_kelvin(p, t);
+                    assert!(theta <= theta_e && theta_e <= theta_es);
+                }
+            }
+        }
     }
 
     #[test]
