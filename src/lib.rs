@@ -64,7 +64,7 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> f64 {
 
 /// Get the vapor pressure of water.
 ///
-/// Eq 5.1 from "Weather Analysis" by Dus&#780;an Dujric&#769;
+/// Tetens equation
 ///
 /// * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
 ///                   the temperature of the parcel.
@@ -73,9 +73,8 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> f64 {
 #[inline]
 pub fn vapor_pressure_water(dew_point_c: f64) -> f64 {
     use std::f64;
-    let kelvin = celsius_to_kelvin(dew_point_c);
 
-    6.1078 * f64::exp(19.8 * dew_point_c / kelvin)
+    6.1078 * f64::exp(17.27 * dew_point_c / (dew_point_c + 237.3))
 }
 
 /// Get the dew point given the vapor pressure of water.
@@ -85,9 +84,8 @@ pub fn vapor_pressure_water(dew_point_c: f64) -> f64 {
 /// Returns: The dew point in Celsius.
 fn dew_point_from_vapor_pressure(vp_hpa: f64) -> f64 {
     use std::f64;
-
-    let kelvin = -273.15 / (f64::ln(vp_hpa / 6.1078) / 19.8 - 1.0);
-    kelvin_to_celsius(kelvin)
+    let a = f64::ln(vp_hpa / 6.1078) / 17.27;
+    a * 237.3 / (1.0 - a)
 }
 
 /// Calculate the relative humidity.
@@ -308,60 +306,181 @@ fn find_root(f: &Fn(f64) -> f64, mut low_val: f64, mut high_val: f64) -> f64 {
 mod test {
     use super::*;
 
+    const TOL: f64 = 1.0e-9;
+    const PCT: f64 = 1.0;
+    const NEAR_ZERO_TOL: f64 = 0.1;
+
+    const TEMPERATURE_AND_VAPOR_PRESSURE_PAIRS: [(f64, f64); 11] = [
+        (0.0, 6.1),
+        (10.0, 12.3),
+        (20.0, 23.4),
+        (30.0, 42.5),
+        (40.0, 73.8),
+        (50.0, 123.4),
+        (60.0, 199.3),
+        (70.0, 311.8),
+        (80.0, 473.7),
+        (90.0, 701.2),
+        (100.0, 1013.2),
+    ];
+
     fn approx_equal(left: f64, right: f64, tol: f64) -> bool {
         use std::f64;
         assert!(tol > 0.0);
         f64::abs(left - right) <= tol
     }
 
-    #[test]
-    fn test_celsius_to_kelvin(){
-        unimplemented!()
+    fn within_pct(target: f64, value: f64, pct: f64, near_zero_tol: f64) -> bool {
+        use std::f64;
+        assert!(pct > 0.0 && pct < 100.0);
+        if f64::abs(target) < TOL {
+            f64::abs(target - value) <= near_zero_tol
+        } else {
+            f64::abs((target - value) / target) <= pct / 100.0
+        }
+    }
+
+    struct DRange {
+        start: f64,
+        step: f64,
+        stop: f64,
+    }
+
+    impl Iterator for DRange {
+        type Item = f64;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            if self.step > 0.0 && self.start > self.stop {
+                None
+            } else if self.step < 0.0 && self.start < self.stop {
+                None
+            } else {
+                let next = self.start;
+                self.start += self.step;
+                Some(next)
+            }
+        }
+    }
+
+    fn pressure_levels() -> DRange {
+        DRange {
+            start: 1000.0,
+            step: -10.0,
+            stop: 100.0,
+        }
+    }
+
+    fn temperatures() -> DRange {
+        DRange {
+            start: -100.0,
+            step: 10.0,
+            stop: 100.0,
+        }
+    }
+
+    macro_rules! assert_approx_eq {
+        ($a:expr, $b:expr) => {
+            assert!(approx_equal($a,$b,TOL));
+        };
+        ($a:expr, $b:expr, $msg:expr) => {
+            assert!(approx_equal($a,$b,TOL), $msg);
+        };
+    }
+
+    macro_rules! assert_within_percent {
+        ($a:expr, $b:expr) => {
+            assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL));
+        };
+        ($a:expr, $b:expr, $msg:expr) => {
+            assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL), $msg);
+        };
     }
 
     #[test]
-    fn test_kelvin_to_celsius(){
-        unimplemented!()
+    fn test_celsius_to_kelvin() {
+        assert_approx_eq!(celsius_to_kelvin(-10.0), 263.15);
+        assert_approx_eq!(celsius_to_kelvin(0.0), 273.15);
+        assert_approx_eq!(celsius_to_kelvin(10.0), 283.15);
+        assert_approx_eq!(celsius_to_kelvin(-273.15), 0.0);
     }
 
     #[test]
-    fn test_celsius_to_f(){
-        unimplemented!()
+    fn test_kelvin_to_celsius() {
+        assert_approx_eq!(kelvin_to_celsius(263.15), -10.0);
+        assert_approx_eq!(kelvin_to_celsius(273.15), 0.0);
+        assert_approx_eq!(kelvin_to_celsius(283.15), 10.0);
+        assert_approx_eq!(kelvin_to_celsius(0.0), -273.15);
     }
 
     #[test]
-    fn test_f_to_celsius(){
-        unimplemented!()
-    }
-
-    #[test]
-    fn test_theta_kelvin() {
-        for &t in [-20.0, -10.0, 0.0, 10.0, 20.0].iter() {
-            let kelvin = celsius_to_kelvin(t);
-            let theta = theta_kelvin(1000.0, t);
-
-            assert!(approx_equal(kelvin, theta, 1.0e-9));
+    fn test_kelvin_celsius_conversions_are_inverses_of_each_other() {
+        for val in temperatures() {
+            assert_approx_eq!(kelvin_to_celsius(celsius_to_kelvin(val)), val);
         }
     }
 
     #[test]
-    fn test_temperature_c_from_theta(){
-        unimplemented!()
+    fn test_celsius_to_f() {
+        assert_approx_eq!(celsius_to_f(0.0), 32.0);
+        assert_approx_eq!(celsius_to_f(100.0), 212.0);
+        assert_approx_eq!(celsius_to_f(-40.0), -40.0);
     }
 
     #[test]
-    fn test_temperature_c_from_theta_and_back_by_theta_kelvin(){
-        unimplemented!()
+    fn test_f_to_celsius() {
+        assert_approx_eq!(f_to_celsius(32.0), 0.0);
+        assert_approx_eq!(f_to_celsius(212.0), 100.0);
+        assert_approx_eq!(f_to_celsius(-40.0), -40.0);
     }
 
     #[test]
-    fn test_vapor_pressure_water(){
-        unimplemented!()
+    fn test_f_celsius_conversions_are_inverses_of_each_other() {
+        for val in temperatures() {
+            assert_approx_eq!(f_to_celsius(celsius_to_f(val)), val);
+        }
     }
 
     #[test]
-    fn test_dew_point_from_vapor_pressure(){
-        unimplemented!()
+    fn test_theta_kelvin() {
+        for t in temperatures() {
+            let kelvin = celsius_to_kelvin(t);
+            let theta = theta_kelvin(1000.0, t);
+
+            assert_approx_eq!(kelvin, theta);
+        }
+    }
+
+    #[test]
+    fn test_temperature_c_from_theta() {
+        for t in temperatures() {
+            let kelvin = celsius_to_kelvin(t);
+            let t2 = temperature_c_from_theta(kelvin, 1000.0);
+
+            assert_approx_eq!(t, t2);
+        }
+    }
+
+    #[test]
+    fn test_temperature_c_from_theta_and_back_by_theta_kelvin() {
+        for p in pressure_levels() {
+            for t in temperatures() {
+                assert_approx_eq!(t, temperature_c_from_theta(theta_kelvin(p, t), p));
+            }
+        }
+    }
+
+    #[test]
+    fn test_vapor_pressure_water() {
+        for &(t, vp) in TEMPERATURE_AND_VAPOR_PRESSURE_PAIRS.into_iter() {
+            assert_within_percent!(vp, vapor_pressure_water(t));
+        }
+    }
+
+    #[test]
+    fn test_dew_point_from_vapor_pressure() {
+        for &(t, vp) in TEMPERATURE_AND_VAPOR_PRESSURE_PAIRS.into_iter() {
+            assert_within_percent!(t, dew_point_from_vapor_pressure(vp));
+        }
     }
 
     #[test]
@@ -369,31 +488,38 @@ mod test {
         for &dp in [-20.0, -10.0, 0.0, 10.0, 20.0].iter() {
             let forward = vapor_pressure_water(dp);
             let back = dew_point_from_vapor_pressure(forward);
-
-            println!("{} ~= {}", dp, back);
-            assert!(approx_equal(dp, back, 1.0e-9), "Failed there and back!");
+            assert_approx_eq!(dp, back);
         }
     }
 
     #[test]
-    fn test_rh(){
+    fn test_rh() {
+        for t in temperatures() {
+            for dp in temperatures().filter(|dp| *dp <= t) {
+                let rh = rh(t, dp);
+                assert!(rh > 0.0, "Negative RH!");
+                assert!(rh <= 1.0);
+                if t == dp {
+                    assert!(rh == 1.0);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_mixing_ratio() {
         unimplemented!()
     }
 
     #[test]
-    fn test_mixing_ratio(){
-        unimplemented!()
-    }
-
-    #[test]
-    fn test_dew_point_from_p_and_mw(){
+    fn test_dew_point_from_p_and_mw() {
         unimplemented!()
     }
 
     #[test]
     fn test_mixing_ration_and_back_by_dew_point_from_p_and_mw() {
-        for &press in [1000.0, 800.0, 700.0, 500.0, 300.0].iter() {
-            for &dp in [-20.0, -10.0, 0.0, 10.0, 20.0].iter() {
+        for press in pressure_levels() {
+            for dp in temperatures() {
                 let mw = mixing_ratio(dp, press);
                 let back = dew_point_from_p_and_mw(press, mw);
 
@@ -404,45 +530,45 @@ mod test {
     }
 
     #[test]
-    fn test_temperature_kelvin_at_lcl(){
+    fn test_temperature_kelvin_at_lcl() {
         unimplemented!()
     }
 
     #[test]
-    fn test_pressure_and_temperature_at_lcl(){
+    fn test_pressure_and_temperature_at_lcl() {
         unimplemented!()
     }
 
     #[test]
-    fn test_pressure_hpa_at_lcl(){
+    fn test_pressure_hpa_at_lcl() {
         unimplemented!()
     }
 
     #[test]
-    fn test_specific_humidity(){
+    fn test_specific_humidity() {
         unimplemented!()
     }
 
     #[test]
-    fn test_theta_e_kelvin(){
+    fn test_theta_e_kelvin() {
         unimplemented!()
     }
 
     #[test]
-    fn test_theta_e_saturated_kelvin(){
+    fn test_theta_e_saturated_kelvin() {
         unimplemented!()
     }
 
     #[test]
-    fn test_wet_bulb(){
+    fn test_wet_bulb() {
         unimplemented!()
     }
 
     #[test]
     fn test_wet_bulb_dp_temp_consistency() {
-        for &press in [1000.0, 906.4, 850.0, 700.0,314.6].iter() {
-            for &t in [-45.46,-20.0, -10.0, -5.0, -1.46, 0.0, 5.0, 10.0, 20.0].iter() {
-                for &dp in [-59.49,-21.0, -11.0, -5.1, -3.06, 0.0, 4.9, 9.9, 20.0].iter() {
+        for &press in [1000.0, 906.4, 850.0, 700.0, 314.6].iter() {
+            for &t in [-45.46, -20.0, -10.0, -5.0, -1.46, 0.0, 5.0, 10.0, 20.0].iter() {
+                for &dp in [-59.49, -21.0, -11.0, -5.1, -3.06, 0.0, 4.9, 9.9, 20.0].iter() {
                     if dp > t {
                         continue;
                     }
