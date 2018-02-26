@@ -9,3 +9,7 @@ license-file = "LICENSE"
 exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*"]
 categories = ["science"]
 keywords = ["weather","meteorology"]
+
+[dependencies]
+"failure"="^0.1.1"
+"failure_derive"="^0.1.1"
