@@ -19,3 +19,7 @@ pub const cv: f64 = 717.0;
 
 /// Ratio of cp and cv. (unitless)
 pub const gamma: f64 = cp / cv;
+
+pub(crate) const ABSOLUTE_ZERO_K: f64 = 0.0;
+pub(crate) const ABSOLUTE_ZERO_C: f64 = -273.15;
+pub(crate) const ABSOLUTE_ZERO_F: f64 = -459.67;
