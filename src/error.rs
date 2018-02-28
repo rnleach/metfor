@@ -13,7 +13,7 @@ pub enum MetForErr {
 
     /// Input out of allowable range. This is usually for emperical methods which should not be
     /// allowed to extrapolate.
-    #[fail(display = "input value out of allowable range")]
+    #[fail(display = "input value out of allowable range, perhaps for empirical reasons")]
     InputOutOfRange,
 
     /// A negative pressure value was encountered.
