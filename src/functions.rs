@@ -81,19 +81,93 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> Result<
     }
 }
 
-/// Get the vapor pressure of water.
+/// Get the vapor pressure over liquid water.
 ///
-/// Equation 2.17 from:
-/// R. R. Rogers; M. K. Yau (1989). A Short Course in Cloud
-/// Physics (3rd ed.). Pergamon Press. p. 16. ISBN 0-7506-3215-1.
+/// Alduchov, O.A., and Eskridge, R.E. Improved Magnus` form approximation of saturation vapor
+/// pressure. United States: N. p., 1997. Web. doi:10.2172/548871.
 ///
-/// Comparing this to the data in table 2.1 from the same source it has an error of 0.1% or less
-/// from -30&deg;C to 35&deg;C. I plotted the error, fit it to a 5th order polynomial and
-/// extrapolated to estimate the error at -60&deg;C which was around 3% and up to 60&deg;C it was
-/// around 1%. At -60&deg;C the vapor pressure is less than 2 Pa, or less than 0.02 hPa. Above
-/// 60&deg;C is extremely rare, if ever encountered at all. This approximation is deemed good enough
-/// in the range -60&deg;C to 60&deg;C for the purpose of this library, but outside that range it 
-/// will return an error.
+///  * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
+///                   the temperature of the parcel.
+///
+/// Returns: The vapor pressure of water vapor in hPa.
+#[inline]
+pub fn vapor_pressure_liquid_water(dew_point_c: f64) -> Result<f64> {
+    use std::f64;
+    if dew_point_c < -40.0 || dew_point_c > 50.0 {
+        Err(InputOutOfRange)
+    } else {
+        Ok(6.1094 * f64::exp(17.625 * dew_point_c / (dew_point_c + 243.04)))
+    }
+}
+
+/// Get the dew point given the vapor pressure of water over liquid water. This function is the
+/// inverse of `vapor_pressure_liquid_water`.
+///
+/// The corresponding temperature limits on that function correspond to vapor pressures of
+/// 0.018968 hPa and 123.60577 hPa. Values outside this range will be returned as an error for
+/// inputs out of range.
+///
+/// `vp_hpa` - The vapor pressure of water in hPa.
+///
+/// Returns: The dew point in Celsius.
+#[inline]
+fn dew_point_from_vapor_pressure_over_liquid(vp_hpa: f64) -> Result<f64> {
+    use std::f64;
+
+    if vp_hpa < 0.018968 || vp_hpa > 123.60577 {
+        Err(InputOutOfRange)
+    } else {
+        let a = f64::ln(vp_hpa / 6.1094) / 17.625;
+        Ok(a * 243.04 / (1.0 - a))
+    }
+}
+
+/// Get the vapor pressure over ice.
+///
+/// Alduchov, O.A., and Eskridge, R.E. Improved Magnus` form approximation of saturation vapor
+/// pressure. United States: N. p., 1997. Web. doi:10.2172/548871.
+///
+///  * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
+///                   the temperature of the parcel.
+///
+/// Returns: The vapor pressure of water vapor in hPa.
+#[inline]
+pub fn vapor_pressure_ice(dew_point_c: f64) -> Result<f64> {
+    use std::f64;
+    if dew_point_c < -80.0 || dew_point_c > 0.0 {
+        Err(InputOutOfRange)
+    } else {
+        Ok(6.1121 * f64::exp(22.587 * dew_point_c / (dew_point_c + 273.86)))
+    }
+}
+
+/// Get the dew point given the vapor pressure of water over ice. This function is the inverse of
+/// `vapor_pressure_ice`.
+///
+/// The corresponding temperature limits on that function correspond to vapor pressures of
+/// 0.0005472 hPa and 6.1121 hPa. Values outside this range will be returned as an error for inputs
+/// out of range.
+///
+/// `vp_hpa` - The vapor pressure of water in hPa.
+///
+/// Returns: The dew point in Celsius.
+#[inline]
+fn dew_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
+    use std::f64;
+
+    if vp_hpa < 0.0005472 || vp_hpa > 6.1121 {
+        Err(InputOutOfRange)
+    } else {
+        let a = f64::ln(vp_hpa / 6.1121) / 22.587;
+        Ok(a * 273.86 / (1.0 - a))
+    }
+}
+
+/// Get the vapor pressure of water using the liquid equation above freezing and the ice equation
+/// below freezing.
+///
+/// Uses a combination of the `vapor_pressure_ice` and vapor_pressure_liquid_water` functions above
+/// and chooses the most appropriate value.
 ///
 /// * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
 ///                   the temperature of the parcel.
@@ -101,32 +175,27 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> Result<
 /// Returns: The vapor pressure of water vapor in hPa.
 #[inline]
 pub fn vapor_pressure_water(dew_point_c: f64) -> Result<f64> {
-    use std::f64;
-    if dew_point_c < -60.0 || dew_point_c > 60.0 {
-        Err(InputOutOfRange)
+    if dew_point_c < 0.0 {
+        vapor_pressure_ice(dew_point_c)
     } else {
-        Ok(6.112 * f64::exp(17.67 * dew_point_c / (dew_point_c + 243.5)))
+        vapor_pressure_liquid_water(dew_point_c)
     }
 }
 
 /// Get the dew point given the vapor pressure of water. This function is the inverse of
 /// `vapor_pressure_water`.
 ///
-/// The corresponding temperature limits on that function correspond to vapor pressures of
-/// 0.01892 hPa and 201.0391 hPa. Values outside this range will be returned as an error for inputs
-/// out of range.
-///
 /// `vp_hpa` - The vapor pressure of water in hPa.
 ///
 /// Returns: The dew point in Celsius.
+#[inline]
 fn dew_point_from_vapor_pressure(vp_hpa: f64) -> Result<f64> {
     use std::f64;
 
-    if vp_hpa < 0.01832 || vp_hpa > 201.0391 {
-        Err(InputOutOfRange)
+    if vp_hpa < 6.11075 {
+        dew_point_from_vapor_pressure_over_ice(vp_hpa)
     } else {
-        let a = f64::ln(vp_hpa / 6.112) / 17.67;
-        Ok(a * 243.5 / (1.0 - a))
+        dew_point_from_vapor_pressure_over_liquid(vp_hpa)
     }
 }
 
@@ -138,8 +207,17 @@ fn dew_point_from_vapor_pressure(vp_hpa: f64) -> Result<f64> {
 /// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
 #[inline]
 pub fn rh(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
-    let e = vapor_pressure_water(dew_point_c)?;
-    let es = vapor_pressure_water(temperature_c)?;
+    let e;
+    let es;
+
+    if temperature_c < 0.0 {
+        e = vapor_pressure_ice(dew_point_c)?;
+        es = vapor_pressure_ice(temperature_c)?;
+    } else {
+        e = vapor_pressure_liquid_water(dew_point_c)?;
+        es = vapor_pressure_liquid_water(temperature_c)?;
+    }
+
     // Allow e > es for supersaturation.
     Ok(e / es)
 }
@@ -241,6 +319,8 @@ pub fn pressure_and_temperature_at_lcl(
 pub fn pressure_hpa_at_lcl(temperature_c: f64, dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
     pressure_and_temperature_at_lcl(temperature_c, dew_point_c, pressure_hpa).map(|r| r.0)
 }
+
+// TODO: Code review below here.
 
 /// Calculate the specific humidity.
 ///
@@ -470,19 +550,33 @@ mod test {
 
     macro_rules! assert_approx_eq {
         ($a:expr, $b:expr) => {
-            assert!(approx_equal($a,$b,TOL));
+            {
+                println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a -$b));
+                assert!(approx_equal($a,$b,TOL));
+            }
         };
         ($a:expr, $b:expr, $msg:expr) => {
-            assert!(approx_equal($a,$b,TOL), $msg);
+            {
+                println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a -$b));
+                assert!(approx_equal($a,$b,TOL), $msg);
+            }
         };
     }
 
     macro_rules! assert_within_percent {
         ($a:expr, $b:expr) => {
-            assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL));
+            {
+                println!("{} == {} within percent <= {} or tolerance <= {} near zero",
+                    $a, $b, f64::abs(($a -$b)/$a), f64::abs($a -$b));
+                assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL));
+            }
         };
         ($a:expr, $b:expr, $msg:expr) => {
-            assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL), $msg);
+            {
+                println!("{} == {} within percent <= {} or tolerance <= {} near zero",
+                    $a, $b, f64::abs(($a -$b)/$a), f64::abs($a -$b));
+                assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL), $msg);
+            }
         };
     }
 
@@ -577,6 +671,10 @@ mod test {
             }
         }
     }
+
+    // TODO: Test vapor pressure liquid there and back.
+
+    // TODO: Test vapor pressure ice there and back.
 
     #[test]
     fn test_vapor_pressure_water() {
