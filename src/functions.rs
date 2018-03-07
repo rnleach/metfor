@@ -81,6 +81,13 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> Result<
     }
 }
 
+// Constants used for the limits of applicability to the empirical relationships used for
+// vapor pressure.
+const MIN_T_VP_ICE: f64 = -80.0;
+const MIN_T_VP_LIQUID: f64 = -40.0;
+const MAX_T_VP_ICE: f64 = 0.0;
+const MAX_T_VP_LIQUID: f64 = 50.0;
+
 /// Get the vapor pressure over liquid water.
 ///
 /// Alduchov, O.A., and Eskridge, R.E. Improved Magnus` form approximation of saturation vapor
@@ -93,7 +100,7 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> Result<
 #[inline]
 pub fn vapor_pressure_liquid_water(dew_point_c: f64) -> Result<f64> {
     use std::f64;
-    if dew_point_c < -40.0 || dew_point_c > 50.0 {
+    if dew_point_c < MIN_T_VP_LIQUID || dew_point_c > MAX_T_VP_LIQUID {
         Err(InputOutOfRange)
     } else {
         Ok(6.1094 * f64::exp(17.625 * dew_point_c / (dew_point_c + 243.04)))
@@ -134,7 +141,7 @@ fn dew_point_from_vapor_pressure_over_liquid(vp_hpa: f64) -> Result<f64> {
 #[inline]
 pub fn vapor_pressure_ice(dew_point_c: f64) -> Result<f64> {
     use std::f64;
-    if dew_point_c < -80.0 || dew_point_c > 0.0 {
+    if dew_point_c < MIN_T_VP_ICE || dew_point_c > MAX_T_VP_ICE {
         Err(InputOutOfRange)
     } else {
         Ok(6.1121 * f64::exp(22.587 * dew_point_c / (dew_point_c + 273.86)))
@@ -175,7 +182,7 @@ fn dew_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
 /// Returns: The vapor pressure of water vapor in hPa.
 #[inline]
 pub fn vapor_pressure_water(dew_point_c: f64) -> Result<f64> {
-    if dew_point_c < 0.0 {
+    if dew_point_c < MAX_T_VP_ICE {
         vapor_pressure_ice(dew_point_c)
     } else {
         vapor_pressure_liquid_water(dew_point_c)
@@ -190,9 +197,7 @@ pub fn vapor_pressure_water(dew_point_c: f64) -> Result<f64> {
 /// Returns: The dew point in Celsius.
 #[inline]
 fn dew_point_from_vapor_pressure(vp_hpa: f64) -> Result<f64> {
-    use std::f64;
-
-    if vp_hpa < 6.11075 {
+    if vp_hpa < 6.1094 {
         dew_point_from_vapor_pressure_over_ice(vp_hpa)
     } else {
         dew_point_from_vapor_pressure_over_liquid(vp_hpa)
@@ -210,7 +215,7 @@ pub fn rh(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
     let e;
     let es;
 
-    if temperature_c < 0.0 {
+    if temperature_c < MAX_T_VP_ICE {
         e = vapor_pressure_ice(dew_point_c)?;
         es = vapor_pressure_ice(temperature_c)?;
     } else {
@@ -319,8 +324,6 @@ pub fn pressure_and_temperature_at_lcl(
 pub fn pressure_hpa_at_lcl(temperature_c: f64, dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
     pressure_and_temperature_at_lcl(temperature_c, dew_point_c, pressure_hpa).map(|r| r.0)
 }
-
-// TODO: Code review below here.
 
 /// Calculate the specific humidity.
 ///
@@ -462,52 +465,11 @@ mod test {
     use super::*;
 
     const TOL: f64 = 1.0e-9;
-    const PCT: f64 = 1.0;
-    const NEAR_ZERO_TOL: f64 = 0.1;
-
-    // Values in the range -40C to +40C from table 2.1 in Rogers and Yau (see reference above in
-    // in vapor pressure function).
-    const TEMPERATURE_AND_VAPOR_PRESSURE_PAIRS: [(f64, f64); 24] = [
-        (-80.0, 0.0010748),
-        (-40.0, 0.1905),
-        (-35.0, 0.3154),
-        (-30.0, 0.5106),
-        (-25.0, 0.809),
-        (-20.0, 1.2563),
-        (-15.0, 1.9144),
-        (-10.0, 2.8657),
-        (-5.0, 4.2184),
-        (0.0, 6.1121),
-        (5.0, 8.7247),
-        (10.0, 12.2794),
-        (15.0, 17.0532),
-        (20.0, 23.3854),
-        (25.0, 31.6874),
-        (30.0, 42.4520),
-        (35.0, 56.2645),
-        (40.0, 73.8127),
-        (50.0, 123.4),
-        (60.0, 199.3),
-        (70.0, 311.8),
-        (80.0, 473.7),
-        (90.0, 701.2),
-        (100.0, 1013.2),
-    ];
 
     fn approx_equal(left: f64, right: f64, tol: f64) -> bool {
         use std::f64;
         assert!(tol > 0.0);
         f64::abs(left - right) <= tol
-    }
-
-    fn within_pct(target: f64, value: f64, pct: f64, near_zero_tol: f64) -> bool {
-        use std::f64;
-        assert!(pct > 0.0 && pct < 100.0);
-        if f64::abs(target) < TOL {
-            f64::abs(target - value) <= near_zero_tol
-        } else {
-            f64::abs((target - value) / target) <= pct / 100.0
-        }
     }
 
     struct DRange {
@@ -559,23 +521,6 @@ mod test {
             {
                 println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a -$b));
                 assert!(approx_equal($a,$b,TOL), $msg);
-            }
-        };
-    }
-
-    macro_rules! assert_within_percent {
-        ($a:expr, $b:expr) => {
-            {
-                println!("{} == {} within percent <= {} or tolerance <= {} near zero",
-                    $a, $b, f64::abs(($a -$b)/$a), f64::abs($a -$b));
-                assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL));
-            }
-        };
-        ($a:expr, $b:expr, $msg:expr) => {
-            {
-                println!("{} == {} within percent <= {} or tolerance <= {} near zero",
-                    $a, $b, f64::abs(($a -$b)/$a), f64::abs($a -$b));
-                assert!(within_pct($a, $b, PCT, NEAR_ZERO_TOL), $msg);
             }
         };
     }
@@ -672,43 +617,27 @@ mod test {
         }
     }
 
-    // TODO: Test vapor pressure liquid there and back.
-
-    // TODO: Test vapor pressure ice there and back.
-
     #[test]
-    fn test_vapor_pressure_water() {
-        for (celsius, vp, vp_result) in TEMPERATURE_AND_VAPOR_PRESSURE_PAIRS
-            .into_iter()
-            .map(|pair| (pair.0, pair.1, vapor_pressure_water(pair.0)))
-        {
-            if celsius < -60.0 || celsius > 60.0 {
-                assert!(vp_result.unwrap_err() == InputOutOfRange);
-            } else if celsius < -40.0 || celsius > 40.0 {
-                assert!(within_pct(vp, vp_result.unwrap(), 3.0, 0.1));
-            } else {
-                assert_within_percent!(vp, vp_result.unwrap());
-            }
+    fn test_vapor_pressure_liquid_water_there_and_back() {
+        for &dp in [-40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 50.0].iter() {
+            let forward = vapor_pressure_liquid_water(dp).unwrap();
+            let back = dew_point_from_vapor_pressure_over_liquid(forward).unwrap();
+            assert_approx_eq!(dp, back);
         }
     }
 
     #[test]
-    fn test_dew_point_from_vapor_pressure() {
-        for (dp, vp, dp_result) in TEMPERATURE_AND_VAPOR_PRESSURE_PAIRS
-            .into_iter()
-            .map(|pair| (pair.0, pair.1, dew_point_from_vapor_pressure(pair.1)))
-        {
-            if vp < 0.01832 || vp > 201.0391 {
-                assert!(dp_result.unwrap_err() == InputOutOfRange);
-            } else {
-                assert_within_percent!(dp, dp_result.unwrap());
-            }
+    fn test_vapor_pressure_ice_there_and_back() {
+        for &dp in [-80.0, -60.0, -40.0, -20.0, -10.0, -5.0, 0.0].iter() {
+            let forward = vapor_pressure_ice(dp).unwrap();
+            let back = dew_point_from_vapor_pressure_over_ice(forward).unwrap();
+            assert_approx_eq!(dp, back);
         }
     }
 
     #[test]
     fn test_vapor_pressure_water_and_back_by_dew_point_from_vapor_pressure() {
-        for &dp in [-20.0, -10.0, 0.0, 10.0, 20.0].iter() {
+        for &dp in [-80.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 50.0].iter() {
             let forward = vapor_pressure_water(dp).unwrap();
             let back = dew_point_from_vapor_pressure(forward).unwrap();
             assert_approx_eq!(dp, back);
@@ -765,7 +694,15 @@ mod test {
                     Ok(mw) => {
                         let back = dew_point_from_p_and_mw(press, mw);
                         match back {
-                            Ok(back) => assert_approx_eq!(dp, back, "Failed there and back!"),
+                            Ok(back) => {
+                                println!(
+                                    "{} == {} with tolerance <= {}",
+                                    dp,
+                                    back,
+                                    f64::abs(dp - back)
+                                );
+                                assert!(approx_equal(dp, back, 1.0e-2));
+                            }
                             Err(_) => { /* Ignore error that bubbled up. */ }
                         }
                     }
