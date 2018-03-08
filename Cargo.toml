@@ -1,6 +1,6 @@
 [package]
 name = "metfor"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
 description = """Meteorological formulas and constants."""
 repository = "https://github.com/rnleach/metfor.git"

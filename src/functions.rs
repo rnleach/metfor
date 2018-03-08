@@ -173,7 +173,7 @@ fn dew_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
 /// Get the vapor pressure of water using the liquid equation above freezing and the ice equation
 /// below freezing.
 ///
-/// Uses a combination of the `vapor_pressure_ice` and vapor_pressure_liquid_water` functions above
+/// Uses a combination of the `vapor_pressure_ice` and `vapor_pressure_liquid_water` functions above
 /// and chooses the most appropriate value.
 ///
 /// * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
@@ -212,16 +212,51 @@ fn dew_point_from_vapor_pressure(vp_hpa: f64) -> Result<f64> {
 /// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
 #[inline]
 pub fn rh(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
-    let e;
-    let es;
-
-    if temperature_c < MAX_T_VP_ICE {
-        e = vapor_pressure_ice(dew_point_c)?;
-        es = vapor_pressure_ice(temperature_c)?;
+    let (es, e) = if temperature_c < MAX_T_VP_ICE {
+        (
+            vapor_pressure_ice(temperature_c)?,
+            vapor_pressure_ice(dew_point_c)?,
+        )
     } else {
-        e = vapor_pressure_liquid_water(dew_point_c)?;
-        es = vapor_pressure_liquid_water(temperature_c)?;
-    }
+        (
+            vapor_pressure_liquid_water(temperature_c)?,
+            vapor_pressure_liquid_water(dew_point_c)?,
+        )
+    };
+
+    // Allow e > es for supersaturation.
+    Ok(e / es)
+}
+
+/// Calculate the relative humidity with respect to liquid water.
+///
+/// * `temperature_c` - The temperature of the parcel in Celsius.
+/// * `dew_point_c` - The dew point of the parcel in Celsius.
+///
+/// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
+#[inline]
+pub fn rh_water(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
+    let (es, e) = (
+        vapor_pressure_liquid_water(temperature_c)?,
+        vapor_pressure_liquid_water(dew_point_c)?,
+    );
+
+    // Allow e > es for supersaturation.
+    Ok(e / es)
+}
+
+/// Calculate the relative humidity with respect to ice.
+///
+/// * `temperature_c` - The temperature of the parcel in Celsius.
+/// * `dew_point_c` - The dew point of the parcel in Celsius.
+///
+/// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
+#[inline]
+pub fn rh_ice(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
+    let (es, e) = (
+        vapor_pressure_ice(temperature_c)?,
+        vapor_pressure_ice(dew_point_c)?,
+    );
 
     // Allow e > es for supersaturation.
     Ok(e / es)
@@ -425,7 +460,7 @@ pub fn latent_heat_of_condensation(temperature_c: f64) -> Result<f64> {
 }
 
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
-/// when drawing moist adiabats.
+/// when finding wet bulb temperature.
 fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) -> Result<f64> {
     use std::f64;
     const MAX_IT: usize = 50;
@@ -436,7 +471,6 @@ fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) ->
     }
 
     let mut f_low = f(low_val)?;
-    // let mut f_high = f(high_val);
 
     let mut mid_val = (high_val - low_val) / 2.0 + low_val;
     let mut f_mid = f(mid_val)?;
@@ -446,7 +480,6 @@ fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) ->
             f_low = f_mid;
         } else {
             high_val = mid_val;
-            // f_high = f_mid;
         }
 
         if (high_val - low_val).abs() < EPS {
@@ -649,6 +682,46 @@ mod test {
         for t in temperatures() {
             for dp in temperatures().filter(|dp| *dp <= t) {
                 let rh_result = rh(t, dp);
+                match rh_result {
+                    Err(InputOutOfRange) => { /* Bubbled up from vapor pressure. */ }
+                    Err(_) => panic!("Unexpected Error."),
+                    Ok(rh) => {
+                        assert!(rh > 0.0, "Negative RH!");
+                        assert!(rh <= 1.0);
+                        if t == dp {
+                            assert!(rh == 1.0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_rh_water() {
+        for t in temperatures() {
+            for dp in temperatures().filter(|dp| *dp <= t) {
+                let rh_result = rh_water(t, dp);
+                match rh_result {
+                    Err(InputOutOfRange) => { /* Bubbled up from vapor pressure. */ }
+                    Err(_) => panic!("Unexpected Error."),
+                    Ok(rh) => {
+                        assert!(rh > 0.0, "Negative RH!");
+                        assert!(rh <= 1.0);
+                        if t == dp {
+                            assert!(rh == 1.0);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_rh_ice() {
+        for t in temperatures() {
+            for dp in temperatures().filter(|dp| *dp <= t) {
+                let rh_result = rh_ice(t, dp);
                 match rh_result {
                     Err(InputOutOfRange) => { /* Bubbled up from vapor pressure. */ }
                     Err(_) => panic!("Unexpected Error."),
