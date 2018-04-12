@@ -459,6 +459,25 @@ pub fn latent_heat_of_condensation(temperature_c: f64) -> Result<f64> {
     }
 }
 
+/// Virtual temperature in Celsius
+///
+/// From the Glossary of Meteorology. http://glossary.ametsoc.org/wiki/Virtual_temperature
+///
+/// * `temperature_c` - the temperature of the parcel in Celsius.
+/// * `dew_point_c` - the dew point of the parcel in Celsius.
+/// * `pressure_hpa` - the pressure of the parcel in hPa
+/// 
+/// Returns the virtual temperature in Celsius.
+#[inline]
+pub fn virtual_temperature_c(
+    temperature_c: f64,
+    dew_point_c: f64,
+    pressure_hpa: f64,
+) -> Result<f64> {
+    let rv = mixing_ratio(dew_point_c, pressure_hpa)?;
+    Ok(temperature_c * (1.0 + rv / epsilon) / (1.0 + rv))
+}
+
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
 /// when finding wet bulb temperature.
 fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) -> Result<f64> {

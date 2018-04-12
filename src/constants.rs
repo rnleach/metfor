@@ -17,6 +17,9 @@ pub const cp: f64 = 1004.0;
 /// Specific heat of dry air at constant volume. (J K<sup>-1</sup> kg<sup>-1</sup>)
 pub const cv: f64 = 717.0;
 
+/// Ratio of R / Rv. (no units)
+pub const epsilon: f64 = R / Rv;
+
 /// Ratio of cp and cv. (unitless)
 pub const gamma: f64 = cp / cv;
 
