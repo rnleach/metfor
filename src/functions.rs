@@ -466,7 +466,7 @@ pub fn latent_heat_of_condensation(temperature_c: f64) -> Result<f64> {
 /// * `temperature_c` - the temperature of the parcel in Celsius.
 /// * `dew_point_c` - the dew point of the parcel in Celsius.
 /// * `pressure_hpa` - the pressure of the parcel in hPa
-/// 
+///
 /// Returns the virtual temperature in Celsius.
 #[inline]
 pub fn virtual_temperature_c(
@@ -475,7 +475,9 @@ pub fn virtual_temperature_c(
     pressure_hpa: f64,
 ) -> Result<f64> {
     let rv = mixing_ratio(dew_point_c, pressure_hpa)?;
-    Ok(temperature_c * (1.0 + rv / epsilon) / (1.0 + rv))
+    let t_k = theta_kelvin(pressure_hpa, temperature_c)?;
+    let vt_k = t_k * (1.0 + rv / epsilon) / (1.0 + rv);
+    temperature_c_from_theta(vt_k, pressure_hpa)
 }
 
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
@@ -932,6 +934,29 @@ mod test {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn test_virtual_temperature_c() {
+        let t_c = [0.0, 10.0, 20.0, 25.0, 30.0];
+        let dp_c = [-15.0, -15.0, 18.0, 19.0, 19.0];
+        let p_hpa = [1000.0, 1000.0, 900.0, 875.0, 875.0];
+        let vt = [0.2, 10.21, 22.57, 27.86, 32.91];
+
+        for (&t, (&dp, (&p, &target))) in
+            t_c.iter().zip(dp_c.iter().zip(p_hpa.iter().zip(vt.iter())))
+        {
+            println!(
+                "target = {}, value = {}",
+                target,
+                virtual_temperature_c(t, dp, p).unwrap()
+            );
+            assert!(approx_equal(
+                target,
+                virtual_temperature_c(t, dp, p).unwrap(),
+                0.05
+            ));
         }
     }
 
