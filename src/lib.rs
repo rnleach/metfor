@@ -9,9 +9,9 @@
 //! [uom]: https://crates.io/crates/uom
 //! [dimensioned]: https://crates.io/crates/dimensioned
 
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
+//
+// API
+//
 
 pub mod constants;
 pub use constants::*;
@@ -21,3 +21,11 @@ pub use functions::*;
 
 mod error;
 pub use error::*;
+
+//
+// Internal use only
+//
+
+extern crate failure;
+#[macro_use]
+extern crate failure_derive;
