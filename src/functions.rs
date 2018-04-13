@@ -418,6 +418,28 @@ pub fn theta_e_saturated_kelvin(pressure_hpa: f64, temperature_c: f64) -> Result
     Ok(theta * (1.0 + lc * qs / (cp * celsius_to_kelvin(temperature_c)?)))
 }
 
+/// Given the pressure and equivalent potential temperature, assume saturation and calculate the
+/// temperature.
+///
+/// This function is useful if you were trying to calculate the temperature for plotting a
+/// moist adiabat on a skew-t log-p diagram.
+///
+/// * `pressure_hpa` - the initial pressure of the parcel in hPa.
+/// * `theta_e_k` - the equivalent potential temperature in Kelvin.
+///
+/// Returns: The temperature in Celsius.
+#[inline]
+pub fn temperature_c_from_theta_e_saturated_and_pressure(
+    pressure_hpa: f64,
+    theta_e_k: f64,
+) -> Result<f64> {
+    find_root(
+        &|t_c| Ok(theta_e_saturated_kelvin(pressure_hpa, t_c)? - theta_e_k),
+        -80.0,
+        50.0,
+    )
+}
+
 /// Calculate the web bulb temperature.
 ///
 /// * `temperature_c` - the temperature of the parcel in Celsius.
@@ -898,6 +920,20 @@ mod test {
                         assert!(theta <= theta_es);
                     }
                     Err(_) => { /* Ignore errors, they were all passed up. */ }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_theta_e_saturated_and_back() {
+        for p in pressure_levels() {
+            for t in temperatures() {
+                if let Ok(theta_e_sat) = theta_e_saturated_kelvin(p, t) {
+                    let t_back =
+                        temperature_c_from_theta_e_saturated_and_pressure(p, theta_e_sat).unwrap();
+                    println!("t = {} and t_back = {}", t, t_back);
+                    assert!(approx_equal(t, t_back, 5.0e-3));
                 }
             }
         }
