@@ -514,6 +514,12 @@ fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) ->
     }
 
     let mut f_low = f(low_val)?;
+    let f_high = f(high_val)?;
+
+    // Check to make sure we have bracketed a root.
+    if f_high * f_low > 0.0 {
+        return Err(InputOutOfRange);
+    }
 
     let mut mid_val = (high_val - low_val) / 2.0 + low_val;
     let mut f_mid = f(mid_val)?;
@@ -930,10 +936,15 @@ mod test {
         for p in pressure_levels() {
             for t in temperatures() {
                 if let Ok(theta_e_sat) = theta_e_saturated_kelvin(p, t) {
-                    let t_back =
-                        temperature_c_from_theta_e_saturated_and_pressure(p, theta_e_sat).unwrap();
-                    println!("t = {} and t_back = {}", t, t_back);
-                    assert!(approx_equal(t, t_back, 5.0e-3));
+                    if let Ok(t_back) =
+                        temperature_c_from_theta_e_saturated_and_pressure(p, theta_e_sat)
+                    {
+                        println!(
+                            " p = {}, t = {}, theta_e_sat = {} and t_back = {}",
+                            p, t, theta_e_sat, t_back
+                        );
+                        assert!(approx_equal(t, t_back, 5.0e-3));
+                    }
                 }
             }
         }
