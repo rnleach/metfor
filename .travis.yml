@@ -8,3 +8,7 @@ rust:
 matrix:
   allow_failures:
     - rust: nightly
+
+script:
+  - cargo test --verbose
+  - if [ "$TRAVIS_BRANCH" == "master" ]; then echo "Working on master branch" && cargo package --verbose; fi
