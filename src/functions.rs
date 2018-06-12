@@ -84,7 +84,7 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> Result<
 // Constants used for the limits of applicability to the empirical relationships used for
 // vapor pressure.
 const MIN_T_VP_ICE: f64 = -80.0;
-const MIN_T_VP_LIQUID: f64 = -40.0;
+const MIN_T_VP_LIQUID: f64 = -80.0;
 const MAX_T_VP_ICE: f64 = 0.0;
 const MAX_T_VP_LIQUID: f64 = 50.0;
 
@@ -99,11 +99,10 @@ const MAX_T_VP_LIQUID: f64 = 50.0;
 /// Returns: The vapor pressure of water vapor in hPa.
 #[inline]
 pub fn vapor_pressure_liquid_water(dew_point_c: f64) -> Result<f64> {
-    use std::f64;
     if dew_point_c < MIN_T_VP_LIQUID || dew_point_c > MAX_T_VP_LIQUID {
         Err(InputOutOfRange)
     } else {
-        Ok(6.1094 * f64::exp(17.625 * dew_point_c / (dew_point_c + 243.04)))
+        Ok(6.1037 * f64::exp(17.641 * dew_point_c / (dew_point_c + 243.27)))
     }
 }
 
@@ -119,14 +118,15 @@ pub fn vapor_pressure_liquid_water(dew_point_c: f64) -> Result<f64> {
 /// Returns: The dew point in Celsius.
 #[inline]
 fn dew_point_from_vapor_pressure_over_liquid(vp_hpa: f64) -> Result<f64> {
-    use std::f64;
-
-    if vp_hpa < 0.018968 || vp_hpa > 123.60577 {
+    
+    let a = f64::ln(vp_hpa / 6.1037) / 17.641;
+    let dp = a * 243.27 / (1.0 - a);
+    if dp < MIN_T_VP_LIQUID || dp > MAX_T_VP_LIQUID {
         Err(InputOutOfRange)
     } else {
-        let a = f64::ln(vp_hpa / 6.1094) / 17.625;
-        Ok(a * 243.04 / (1.0 - a))
+        Ok(dp)
     }
+    
 }
 
 /// Get the vapor pressure over ice.
@@ -140,7 +140,6 @@ fn dew_point_from_vapor_pressure_over_liquid(vp_hpa: f64) -> Result<f64> {
 /// Returns: The vapor pressure of water vapor in hPa.
 #[inline]
 pub fn vapor_pressure_ice(dew_point_c: f64) -> Result<f64> {
-    use std::f64;
     if dew_point_c < MIN_T_VP_ICE || dew_point_c > MAX_T_VP_ICE {
         Err(InputOutOfRange)
     } else {
@@ -159,73 +158,15 @@ pub fn vapor_pressure_ice(dew_point_c: f64) -> Result<f64> {
 ///
 /// Returns: The dew point in Celsius.
 #[inline]
-fn dew_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
-    use std::f64;
-
-    if vp_hpa < 0.0005472 || vp_hpa > 6.1121 {
+pub fn frost_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
+    
+    let a = f64::ln(vp_hpa / 6.1121) / 22.587;
+    let fp = a * 273.86 / (1.0 - a);
+    if fp < MIN_T_VP_ICE || fp > MAX_T_VP_ICE {
         Err(InputOutOfRange)
     } else {
-        let a = f64::ln(vp_hpa / 6.1121) / 22.587;
-        Ok(a * 273.86 / (1.0 - a))
+        Ok(fp)
     }
-}
-
-/// Get the vapor pressure of water using the liquid equation above freezing and the ice equation
-/// below freezing.
-///
-/// Uses a combination of the `vapor_pressure_ice` and `vapor_pressure_liquid_water` functions above
-/// and chooses the most appropriate value.
-///
-/// * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
-///                   the temperature of the parcel.
-///
-/// Returns: The vapor pressure of water vapor in hPa.
-#[inline]
-pub fn vapor_pressure_water(dew_point_c: f64) -> Result<f64> {
-    if dew_point_c < MAX_T_VP_ICE {
-        vapor_pressure_ice(dew_point_c)
-    } else {
-        vapor_pressure_liquid_water(dew_point_c)
-    }
-}
-
-/// Get the dew point given the vapor pressure of water. This function is the inverse of
-/// `vapor_pressure_water`.
-///
-/// `vp_hpa` - The vapor pressure of water in hPa.
-///
-/// Returns: The dew point in Celsius.
-#[inline]
-fn dew_point_from_vapor_pressure(vp_hpa: f64) -> Result<f64> {
-    if vp_hpa < 6.1094 {
-        dew_point_from_vapor_pressure_over_ice(vp_hpa)
-    } else {
-        dew_point_from_vapor_pressure_over_liquid(vp_hpa)
-    }
-}
-
-/// Calculate the relative humidity.
-///
-/// * `temperature_c` - The temperature of the parcel in Celsius.
-/// * `dew_point_c` - The dew point of the parcel in Celsius.
-///
-/// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
-#[inline]
-pub fn rh(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
-    let (es, e) = if temperature_c < MAX_T_VP_ICE {
-        (
-            vapor_pressure_ice(temperature_c)?,
-            vapor_pressure_ice(dew_point_c)?,
-        )
-    } else {
-        (
-            vapor_pressure_liquid_water(temperature_c)?,
-            vapor_pressure_liquid_water(dew_point_c)?,
-        )
-    };
-
-    // Allow e > es for supersaturation.
-    Ok(e / es)
 }
 
 /// Calculate the relative humidity with respect to liquid water.
@@ -235,7 +176,7 @@ pub fn rh(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
 ///
 /// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
 #[inline]
-pub fn rh_water(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
+pub fn rh(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
     let (es, e) = (
         vapor_pressure_liquid_water(temperature_c)?,
         vapor_pressure_liquid_water(dew_point_c)?,
@@ -273,7 +214,7 @@ pub fn rh_ice(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
 /// Returns: The mixing ratio in kg/kg.
 #[inline]
 pub fn mixing_ratio(dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
-    let vp = vapor_pressure_water(dew_point_c)?;
+    let vp = vapor_pressure_liquid_water(dew_point_c)?;
     if vp > pressure_hpa {
         Err(VaporPressureTooHigh)
     } else {
@@ -291,7 +232,7 @@ pub fn mixing_ratio(dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
 #[inline]
 pub fn dew_point_from_p_and_mw(pressure_hpa: f64, mw: f64) -> Result<f64> {
     let vp = mw * pressure_hpa / (mw + R / Rv);
-    dew_point_from_vapor_pressure(vp)
+    dew_point_from_vapor_pressure_over_liquid(vp)
 }
 
 /// Approximate temperature at the Lifting Condensation Level (LCL).
@@ -371,7 +312,7 @@ pub fn pressure_hpa_at_lcl(temperature_c: f64, dew_point_c: f64, pressure_hpa: f
 /// Returns the specific humidity. (no units)
 #[inline]
 pub fn specific_humidity(dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
-    let vp = vapor_pressure_water(dew_point_c)?;
+    let vp = vapor_pressure_liquid_water(dew_point_c)?;
 
     if pressure_hpa < 0.0 {
         Err(NegativePressure)
@@ -701,7 +642,7 @@ mod test {
 
     #[test]
     fn test_vapor_pressure_liquid_water_there_and_back() {
-        for &dp in [-40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 50.0].iter() {
+        for &dp in [-80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 49.0].iter() {
             let forward = vapor_pressure_liquid_water(dp).unwrap();
             let back = dew_point_from_vapor_pressure_over_liquid(forward).unwrap();
             assert_approx_eq!(dp, back);
@@ -712,16 +653,7 @@ mod test {
     fn test_vapor_pressure_ice_there_and_back() {
         for &dp in [-80.0, -60.0, -40.0, -20.0, -10.0, -5.0, 0.0].iter() {
             let forward = vapor_pressure_ice(dp).unwrap();
-            let back = dew_point_from_vapor_pressure_over_ice(forward).unwrap();
-            assert_approx_eq!(dp, back);
-        }
-    }
-
-    #[test]
-    fn test_vapor_pressure_water_and_back_by_dew_point_from_vapor_pressure() {
-        for &dp in [-80.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 50.0].iter() {
-            let forward = vapor_pressure_water(dp).unwrap();
-            let back = dew_point_from_vapor_pressure(forward).unwrap();
+            let back = frost_point_from_vapor_pressure_over_ice(forward).unwrap();
             assert_approx_eq!(dp, back);
         }
     }
@@ -731,26 +663,6 @@ mod test {
         for t in temperatures() {
             for dp in temperatures().filter(|dp| *dp <= t) {
                 let rh_result = rh(t, dp);
-                match rh_result {
-                    Err(InputOutOfRange) => { /* Bubbled up from vapor pressure. */ }
-                    Err(_) => panic!("Unexpected Error."),
-                    Ok(rh) => {
-                        assert!(rh > 0.0, "Negative RH!");
-                        assert!(rh <= 1.0);
-                        if t == dp {
-                            assert!(rh == 1.0);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_rh_water() {
-        for t in temperatures() {
-            for dp in temperatures().filter(|dp| *dp <= t) {
-                let rh_result = rh_water(t, dp);
                 match rh_result {
                     Err(InputOutOfRange) => { /* Bubbled up from vapor pressure. */ }
                     Err(_) => panic!("Unexpected Error."),
@@ -790,7 +702,7 @@ mod test {
     fn test_mixing_ratio() {
         for p in pressure_levels() {
             for dp in temperatures() {
-                match vapor_pressure_water(dp) {
+                match vapor_pressure_liquid_water(dp) {
                     Ok(vp) => {
                         if vp >= p {
                             continue;
