@@ -1,6 +1,6 @@
 use constants::*;
-use error::*;
 use error::MetForErr::*;
+use error::*;
 
 /// Convert temperatures Celsius to Kelvin.
 #[inline(always)]
@@ -118,7 +118,6 @@ pub fn vapor_pressure_liquid_water(dew_point_c: f64) -> Result<f64> {
 /// Returns: The dew point in Celsius.
 #[inline]
 fn dew_point_from_vapor_pressure_over_liquid(vp_hpa: f64) -> Result<f64> {
-    
     let a = f64::ln(vp_hpa / 6.1037) / 17.641;
     let dp = a * 243.27 / (1.0 - a);
     if dp < MIN_T_VP_LIQUID || dp > MAX_T_VP_LIQUID {
@@ -126,7 +125,6 @@ fn dew_point_from_vapor_pressure_over_liquid(vp_hpa: f64) -> Result<f64> {
     } else {
         Ok(dp)
     }
-    
 }
 
 /// Get the vapor pressure over ice.
@@ -159,7 +157,6 @@ pub fn vapor_pressure_ice(dew_point_c: f64) -> Result<f64> {
 /// Returns: The dew point in Celsius.
 #[inline]
 pub fn frost_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
-    
     let a = f64::ln(vp_hpa / 6.1121) / 22.587;
     let fp = a * 273.86 / (1.0 - a);
     if fp < MIN_T_VP_ICE || fp > MAX_T_VP_ICE {
@@ -534,18 +531,14 @@ mod test {
     }
 
     macro_rules! assert_approx_eq {
-        ($a:expr, $b:expr) => {
-            {
-                println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a -$b));
-                assert!(approx_equal($a,$b,TOL));
-            }
-        };
-        ($a:expr, $b:expr, $msg:expr) => {
-            {
-                println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a -$b));
-                assert!(approx_equal($a,$b,TOL), $msg);
-            }
-        };
+        ($a:expr, $b:expr) => {{
+            println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a - $b));
+            assert!(approx_equal($a, $b, TOL));
+        }};
+        ($a:expr, $b:expr, $msg:expr) => {{
+            println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a - $b));
+            assert!(approx_equal($a, $b, TOL), $msg);
+        }};
     }
 
     #[test]
@@ -642,7 +635,10 @@ mod test {
 
     #[test]
     fn test_vapor_pressure_liquid_water_there_and_back() {
-        for &dp in [-80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 49.0].iter() {
+        for &dp in [
+            -80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 49.0,
+        ].iter()
+        {
             let forward = vapor_pressure_liquid_water(dp).unwrap();
             let back = dew_point_from_vapor_pressure_over_liquid(forward).unwrap();
             assert_approx_eq!(dp, back);
