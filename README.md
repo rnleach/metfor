@@ -5,12 +5,4 @@
 
 # metfor
 
-Meteorological constants and formulas.
 
-I investigated using some sort of dimensional analysis via types with a crate like [uom][uom]
-or [dimensioned][dimensioned]. However after experimentation, neither of these work well for a
-library. Choosing to use one would force that library on the users of this library. In the
-future I may make a feature to use one or the other of these crates.
-
-[uom]: https://crates.io/crates/uom
-[dimensioned]: https://crates.io/crates/dimensioned
