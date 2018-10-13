@@ -6,15 +6,12 @@
 Cargo.lock
 
 //
-// Sublime editor
+// IDE/Editor
 //
-*.sublime-workspace
+*.sublime*
+*.vscode
 
 //
 // OS specific
 //
 .DS_Store
-
-/target/
-**/*.rs.bk
-Cargo.lock
