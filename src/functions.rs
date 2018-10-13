@@ -440,6 +440,36 @@ pub fn virtual_temperature_c(
     temperature_c_from_theta(vt_k, pressure_hpa)
 }
 
+/// Convert wind speed (wind direct is the direction the wind is blowing from) into U-V components.
+///
+/// Returns a tuple `(u_mps, v_mps)`, which is the U and V wind components in meters per second.
+#[inline]
+pub fn spd_dir_to_uv(from_dir_in_degrees: f64, speed_in_knots: f64) -> (f64, f64) {
+    let rads = from_dir_in_degrees.to_radians();
+    let spd_ms = speed_in_knots * 0.514444444;
+
+    (-spd_ms * rads.sin(), -spd_ms * rads.cos())
+}
+
+/// Convert U-V wind speeds to speed and direction.
+///
+/// Returns a tuple `(direction_degrees, speed_in_knots)`.
+#[inline]
+pub fn uv_to_spd_dir(u_mps: f64, v_mps: f64) -> (f64, f64) {
+    let spd_ms = (u_mps.powi(2) + v_mps.powi(2)).sqrt();
+    let spd_knots = spd_ms * 1.9438445;
+
+    let mut degrees = 180.0 + 90.0 - v_mps.atan2(u_mps).to_degrees();
+    while degrees < 0.0 {
+        degrees += 360.0;
+    }
+    while degrees >= 360.0 {
+        degrees -= 360.0;
+    }
+
+    (degrees, spd_knots)
+}
+
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
 /// when finding wet bulb temperature.
 fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) -> Result<f64> {
@@ -539,6 +569,10 @@ mod test {
             println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a - $b));
             assert!(approx_equal($a, $b, TOL), $msg);
         }};
+        ($a:expr, $b:expr, $tol:expr, $msg:expr) => {{
+            println!("{} == {} with tolerance <= {}", $a, $b, f64::abs($a - $b));
+            assert!(approx_equal($a, $b, $tol), $msg);
+        }};
     }
 
     #[test]
@@ -637,7 +671,8 @@ mod test {
     fn test_vapor_pressure_liquid_water_there_and_back() {
         for &dp in [
             -80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 49.0,
-        ].iter()
+        ]
+            .iter()
         {
             let forward = vapor_pressure_liquid_water(dp).unwrap();
             let back = dew_point_from_vapor_pressure_over_liquid(forward).unwrap();
@@ -927,5 +962,44 @@ mod test {
             find_root(&|x| Ok(x * x - 1.0), -2.0, 0.0).unwrap(),
             1.0e-10
         ));
+    }
+
+    fn get_test_winds() -> [((f64, f64), (f64, f64)); 8] {
+        [
+            ((000.0, 10.0), (0.0, -5.14444444)),
+            ((045.0, 10.0), (-3.637671549, -3.637671549)),
+            ((090.0, 10.0), (-5.14444444, 0.0)),
+            ((135.0, 10.0), (-3.637671549, 3.637671549)),
+            ((180.0, 10.0), (0.0, 5.14444444)),
+            ((225.0, 10.0), (3.637671549, 3.637671549)),
+            ((270.0, 10.0), (5.14444444, 0.0)),
+            ((315.0, 10.0), (3.637671549, -3.637671549)),
+        ]
+    }
+
+    #[test]
+    fn test_spd_dir_to_uv() {
+        let spd_dir_to_uv_data = get_test_winds();
+
+        const LOCAL_TOL: f64 = 1.0e-6;
+
+        for &((dir, spd), (u, v)) in &spd_dir_to_uv_data {
+            let (calc_u, calc_v) = spd_dir_to_uv(dir, spd);
+            assert_approx_eq!(calc_u, u, LOCAL_TOL, "U speed mismatch.");
+            assert_approx_eq!(calc_v, v, LOCAL_TOL, "V speed mismatch.");
+        }
+    }
+
+    #[test]
+    fn test_uv_to_spd_dir() {
+        let spd_dir_to_uv_data = get_test_winds();
+
+        const LOCAL_TOL: f64 = 1.0e-6;
+
+        for &((dir, spd), (u, v)) in &spd_dir_to_uv_data {
+            let (calc_dir, calc_spd) = uv_to_spd_dir(u, v);
+            assert_approx_eq!(calc_dir, dir, LOCAL_TOL, "Direction mismatch.");
+            assert_approx_eq!(calc_spd, spd, LOCAL_TOL, "Speed mismatch.");
+        }
     }
 }
