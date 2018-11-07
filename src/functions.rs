@@ -263,6 +263,7 @@ pub fn pressure_hpa_at_lcl(temperature_c: f64, dew_point_c: f64, pressure_hpa: f
     } else {
         let theta = theta_kelvin(pressure_hpa, temperature_c)?;
         let mw = mixing_ratio(dew_point_c, pressure_hpa)?;
+        let theta_e = theta_e_kelvin(temperature_c, dew_point_c, pressure_hpa)?;
 
         let eq = |p| -> Result<f64> {
             let t = temperature_c_from_theta(theta, p)?;
@@ -272,7 +273,23 @@ pub fn pressure_hpa_at_lcl(temperature_c: f64, dew_point_c: f64, pressure_hpa: f
         };
 
         // Search between 1060 and 300 hPa. If it falls outside that range, give up!
-        find_root(&eq, 300.0, 1060.0)
+        let first_guess = find_root(&eq, 300.0, 1060.0)?;
+
+        let eq = |p| -> Result<f64> {
+            let t1 = temperature_c_from_theta(theta, p)?;
+            let t2 = temperature_c_from_theta_e_saturated_and_pressure(p, theta_e)?;
+
+            Ok(t1 - t2)
+        };
+
+        const DELTA: f64 = 10.0;
+        let lclp = if let Ok(lcl) = find_root(&eq, first_guess + DELTA, first_guess - DELTA) {
+            lcl
+        } else {
+            first_guess
+        };
+
+        Ok(lclp)
     }
 }
 
