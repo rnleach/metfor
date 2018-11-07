@@ -2,7 +2,7 @@ use constants::*;
 use error::MetForErr::*;
 use error::*;
 
-/// Convert temperatures Celsius to Kelvin.
+/// Convert temperature from Celsius to Kelvin.
 #[inline(always)]
 pub fn celsius_to_kelvin(celsius: f64) -> Result<f64> {
     if celsius < ABSOLUTE_ZERO_C {
@@ -42,7 +42,7 @@ pub fn f_to_celsius(temperature: f64) -> Result<f64> {
     }
 }
 
-/// Calculate the potential temperature of a parcel.
+/// Calculate potential temperature assuming a 1000 hPa reference level.
 ///
 /// * `pressure_hpa` - Pressure in hPa
 /// * `temperature_c` - Temperature in Celsius.
@@ -57,16 +57,16 @@ pub fn theta_kelvin(pressure_hpa: f64, temperature_c: f64) -> Result<f64> {
     } else if temperature_c < ABSOLUTE_ZERO_C {
         Err(BelowAbsoluteZero)
     } else {
-        Ok(celsius_to_kelvin(temperature_c)? * f64::powf(1000.0 / pressure_hpa, R / cp))
+        Ok(celsius_to_kelvin(temperature_c)? * f64::powf(1000.0 / pressure_hpa, Rd / cp))
     }
 }
 
-/// Given a potential temperature and pressure, calculate the temperature of a parcel.
+/// Given a potential temperature and pressure, calculate the temperature.
 ///
-/// * `theta_kelvin` - The potential temperature in Kelvin.
-/// * `pressure_hpa` - The pressure of the parcel in hPa
+/// * `theta_kelvin` - Potential temperature in Kelvin.
+/// * `pressure_hpa` - Pressure in hPa
 ///
-/// Returns: The temperature in
+/// Returns: The temperature in Celsius.
 #[inline]
 pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> Result<f64> {
     use std::f64;
@@ -76,7 +76,7 @@ pub fn temperature_c_from_theta(theta_kelvin: f64, pressure_hpa: f64) -> Result<
         Err(BelowAbsoluteZero)
     } else {
         Ok(kelvin_to_celsius(
-            theta_kelvin * f64::powf(pressure_hpa / 1000.0, R / cp),
+            theta_kelvin * f64::powf(pressure_hpa / 1000.0, Rd / cp),
         )?)
     }
 }
@@ -93,8 +93,8 @@ const MAX_T_VP_LIQUID: f64 = 50.0;
 /// Alduchov, O.A., and Eskridge, R.E. Improved Magnus` form approximation of saturation vapor
 /// pressure. United States: N. p., 1997. Web. doi:10.2172/548871.
 ///
-///  * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
-///                   the temperature of the parcel.
+///  * `dew_point_c` - the dew point in Celsius. If saturation is assumed this is also the
+///                    temperature.
 ///
 /// Returns: The vapor pressure of water vapor in hPa.
 #[inline]
@@ -108,10 +108,6 @@ pub fn vapor_pressure_liquid_water(dew_point_c: f64) -> Result<f64> {
 
 /// Get the dew point given the vapor pressure of water over liquid water. This function is the
 /// inverse of `vapor_pressure_liquid_water`.
-///
-/// The corresponding temperature limits on that function correspond to vapor pressures of
-/// 0.018968 hPa and 123.60577 hPa. Values outside this range will be returned as an error for
-/// inputs out of range.
 ///
 /// `vp_hpa` - The vapor pressure of water in hPa.
 ///
@@ -132,29 +128,26 @@ fn dew_point_from_vapor_pressure_over_liquid(vp_hpa: f64) -> Result<f64> {
 /// Alduchov, O.A., and Eskridge, R.E. Improved Magnus` form approximation of saturation vapor
 /// pressure. United States: N. p., 1997. Web. doi:10.2172/548871.
 ///
-///  * `dew_point_c` - the dew point in Celsius of the parcel. If saturation is assumed this is also
-///                   the temperature of the parcel.
+///  * `frost_point_c` - the frost point in Celsius. If saturation is assumed this is also the
+///                      temperature.
 ///
 /// Returns: The vapor pressure of water vapor in hPa.
 #[inline]
-pub fn vapor_pressure_ice(dew_point_c: f64) -> Result<f64> {
-    if dew_point_c < MIN_T_VP_ICE || dew_point_c > MAX_T_VP_ICE {
+pub fn vapor_pressure_ice(frost_point_c: f64) -> Result<f64> {
+    if frost_point_c < MIN_T_VP_ICE || frost_point_c > MAX_T_VP_ICE {
         Err(InputOutOfRange)
     } else {
-        Ok(6.1121 * f64::exp(22.587 * dew_point_c / (dew_point_c + 273.86)))
+        Ok(6.1121 * f64::exp(22.587 * frost_point_c / (frost_point_c + 273.86)))
     }
 }
 
-/// Get the dew point given the vapor pressure of water over ice. This function is the inverse of
+/// Get the frost point given the vapor pressure of water over ice. This function is the inverse of
 /// `vapor_pressure_ice`.
 ///
-/// The corresponding temperature limits on that function correspond to vapor pressures of
-/// 0.0005472 hPa and 6.1121 hPa. Values outside this range will be returned as an error for inputs
-/// out of range.
 ///
 /// `vp_hpa` - The vapor pressure of water in hPa.
 ///
-/// Returns: The dew point in Celsius.
+/// Returns: The frost point in Celsius.
 #[inline]
 pub fn frost_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
     let a = f64::ln(vp_hpa / 6.1121) / 22.587;
@@ -168,8 +161,8 @@ pub fn frost_point_from_vapor_pressure_over_ice(vp_hpa: f64) -> Result<f64> {
 
 /// Calculate the relative humidity with respect to liquid water.
 ///
-/// * `temperature_c` - The temperature of the parcel in Celsius.
-/// * `dew_point_c` - The dew point of the parcel in Celsius.
+/// * `temperature_c` - The temperature in Celsius.
+/// * `dew_point_c` - The dew point in Celsius.
 ///
 /// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
 #[inline]
@@ -185,15 +178,15 @@ pub fn rh(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
 
 /// Calculate the relative humidity with respect to ice.
 ///
-/// * `temperature_c` - The temperature of the parcel in Celsius.
-/// * `dew_point_c` - The dew point of the parcel in Celsius.
+/// * `temperature_c` - The temperature in Celsius.
+/// * `frost_point_c` - The frost point in Celsius.
 ///
 /// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
 #[inline]
-pub fn rh_ice(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
+pub fn rh_ice(temperature_c: f64, frost_point_c: f64) -> Result<f64> {
     let (es, e) = (
         vapor_pressure_ice(temperature_c)?,
-        vapor_pressure_ice(dew_point_c)?,
+        vapor_pressure_ice(frost_point_c)?,
     );
 
     // Allow e > es for supersaturation.
@@ -204,53 +197,32 @@ pub fn rh_ice(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
 ///
 /// Eq 5.9 from "Weather Analysis" by Dus&#780;an Dujric&#769;
 ///
-/// * `dew_point_c` - the dew point of the parcel in Celsius. If you want the saturation mixing
-///                   ratio, just make this equal to the temperature.
-/// * `pressure_hpa` - the pressure of the parcel in hPa.
+/// * `dew_point_c` - the dew point in Celsius. If you want the saturation mixing ratio, just make
+///                   this equal to the temperature.
+/// * `pressure_hpa` - the pressure in hPa.
 ///
-/// Returns: The mixing ratio in kg/kg.
+/// Returns: The mixing ratio as a unitless value. Note this is often reported as g/kg.
 #[inline]
 pub fn mixing_ratio(dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
     let vp = vapor_pressure_liquid_water(dew_point_c)?;
     if vp > pressure_hpa {
         Err(VaporPressureTooHigh)
     } else {
-        Ok(R / Rv * vp / (pressure_hpa - vp))
+        Ok(epsilon * vp / (pressure_hpa - vp))
     }
 }
 
 /// Given a mixing ratio and pressure, calculate the dew point temperature. If saturation is
 /// assumed this is also the temperature.
 ///
-/// * `pressure_hpa` - the pressure of the parcel in hPa
-/// * `mw` - the mixing ratio in kg/kg.
+/// * `pressure_hpa` - the pressure in hPa
+/// * `mw` - the mixing ratio.
 ///
-/// Returns: The dew point in celsius
+/// Returns: The dew point in Celsius
 #[inline]
 pub fn dew_point_from_p_and_mw(pressure_hpa: f64, mw: f64) -> Result<f64> {
-    let vp = mw * pressure_hpa / (mw + R / Rv);
+    let vp = mw * pressure_hpa / (mw + epsilon);
     dew_point_from_vapor_pressure_over_liquid(vp)
-}
-
-/// Approximate temperature at the Lifting Condensation Level (LCL).
-///
-/// Eq 5.17 from "Weather Analysis" by Dus&#780;an Dujric&#769;
-///
-/// * `temperature_c` - the initial temperature in Celsius.
-/// * `dew_point_c` - the initial dew point in Celsius.
-///
-/// Returns: The temperature at the LCL in Kelvin.
-#[inline]
-pub fn temperature_kelvin_at_lcl(temperature_c: f64, dew_point_c: f64) -> Result<f64> {
-    if dew_point_c < ABSOLUTE_ZERO_C || temperature_c < ABSOLUTE_ZERO_C {
-        Err(BelowAbsoluteZero)
-    } else if dew_point_c >= temperature_c {
-        Ok(celsius_to_kelvin(temperature_c)?)
-    } else {
-        let celsius_lcl =
-            dew_point_c - (0.001296 * dew_point_c + 0.1963) * (temperature_c - dew_point_c);
-        celsius_to_kelvin(celsius_lcl)
-    }
 }
 
 /// Calculate the temperature and pressure at the lifting condensation level (LCL).
@@ -268,25 +240,14 @@ pub fn pressure_and_temperature_at_lcl(
     dew_point_c: f64,
     pressure_hpa: f64,
 ) -> Result<(f64, f64)> {
-    use std::f64;
+    let plcl = pressure_hpa_at_lcl(temperature_c, dew_point_c, pressure_hpa)?;
+    let tlcl = temperature_c_from_theta(theta_kelvin(pressure_hpa, temperature_c)?, plcl)?;
+    let tlcl = celsius_to_kelvin(tlcl)?;
 
-    if dew_point_c < ABSOLUTE_ZERO_C || temperature_c < ABSOLUTE_ZERO_C {
-        Err(BelowAbsoluteZero)
-    } else if dew_point_c >= temperature_c {
-        Ok((pressure_hpa, celsius_to_kelvin(temperature_c)?))
-    } else {
-        let t_lcl = temperature_kelvin_at_lcl(temperature_c, dew_point_c)?;
-        let t_kelvin = celsius_to_kelvin(temperature_c)?;
-
-        let p_lcl = pressure_hpa * f64::powf(t_lcl / t_kelvin, cp / R);
-
-        Ok((p_lcl, t_lcl))
-    }
+    Ok((plcl, tlcl))
 }
 
 /// Approximate pressure of the Lifting Condensation Level (LCL).
-///
-/// Eq 5.18 from "Weather Analysis" by Dus&#780;an Dujric&#769;
 ///
 /// * `temperature_c` - the initial temperature in Celsius.
 /// * `dew_point_c` - the initial dew point in Celsius.
@@ -295,7 +256,24 @@ pub fn pressure_and_temperature_at_lcl(
 /// Returns: The pressure at the LCL in hPa.
 #[inline]
 pub fn pressure_hpa_at_lcl(temperature_c: f64, dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
-    pressure_and_temperature_at_lcl(temperature_c, dew_point_c, pressure_hpa).map(|r| r.0)
+    if dew_point_c < ABSOLUTE_ZERO_C || temperature_c < ABSOLUTE_ZERO_C {
+        Err(BelowAbsoluteZero)
+    } else if dew_point_c >= temperature_c {
+        Ok(pressure_hpa)
+    } else {
+        let theta = theta_kelvin(pressure_hpa, temperature_c)?;
+        let mw = mixing_ratio(dew_point_c, pressure_hpa)?;
+
+        let eq = |p| -> Result<f64> {
+            let t = temperature_c_from_theta(theta, p)?;
+            let dp = dew_point_from_p_and_mw(p, mw)?;
+
+            Ok(t - dp)
+        };
+
+        // Search between 1060 and 300 hPa. If it falls outside that range, give up!
+        find_root(&eq, 300.0, 1060.0)
+    }
 }
 
 /// Calculate the specific humidity.
@@ -304,7 +282,7 @@ pub fn pressure_hpa_at_lcl(temperature_c: f64, dew_point_c: f64, pressure_hpa: f
 ///
 /// * `dew_point_c` - the dew point in Celsius, if this is the same as the temperature then this
 ///                   calculates the saturation specific humidity.
-/// * `pressure_hpa` - thepressure of the parcel in hPa.
+/// * `pressure_hpa` - the pressure in hPa.
 ///
 /// Returns the specific humidity. (no units)
 #[inline]
@@ -314,46 +292,44 @@ pub fn specific_humidity(dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
     if pressure_hpa < 0.0 {
         Err(NegativePressure)
     } else if vp > pressure_hpa {
-        Err(UnphysicalInput)
+        Err(VaporPressureTooHigh)
     } else {
-        Ok(vp / pressure_hpa * (R / Rv))
+        Ok(vp / pressure_hpa * epsilon)
     }
 }
 
 /// Calculate equivalent potential temperature.
 ///
-/// Eq 5.23 from "Weather Analysis" by Dus&#780;an Dujric&#769;
+/// Equation from ["The Glossary of Meteorology"]
+/// (http://glossary.ametsoc.org/wiki/Equivalent_potential_temperature) online where the
+/// approximation of ignoring the "total water mixing ratio" is used since most of the time we do
+/// not have the necessary information to calculate that.
 ///
 /// * `temperature_c` - the initial temperature in Celsius.
 /// * `dew_point_c` - the initial dew point in Celsius.
-/// * `pressure_hpa` - the initial pressure of the parcel in hPa.
+/// * `pressure_hpa` - the initial pressure in hPa.
 ///
 /// Returns: The equivalent potential temperature in Kelvin.
 #[inline]
 pub fn theta_e_kelvin(temperature_c: f64, dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
-    let theta = theta_kelvin(pressure_hpa, temperature_c)?;
-    let t_lcl = temperature_kelvin_at_lcl(temperature_c, dew_point_c)?;
-    let qs = specific_humidity(dew_point_c, pressure_hpa)?;
-    let lc = latent_heat_of_condensation(temperature_c)?;
+    let tk = celsius_to_kelvin(temperature_c)?;
+    const P0: f64 = 1000.0; // Reference pressure for potential temperatures.
+    let rv = mixing_ratio(dew_point_c, pressure_hpa)?;
+    let pd = pressure_hpa - vapor_pressure_liquid_water(dew_point_c)?;
 
-    Ok(theta * (1.0 + lc * qs / (cp * t_lcl)))
-}
+    if pd < 0.0 {
+        return Err(VaporPressureTooHigh);
+    }
 
-/// Calculate the equivalent potential temperature assuming a saturated parcel.
-///
-/// Eq 5.23 from "Weather Analysis" by Dus&#780;an Dujric&#769;
-///
-/// * `temperature_c` - the initial temperature in Celsius.
-/// * `pressure_hpa` - the initial pressure of the parcel in hPa.
-///
-/// Returns: The saturated equivalent potential temperature in Kelvin.
-#[inline]
-pub fn theta_e_saturated_kelvin(pressure_hpa: f64, temperature_c: f64) -> Result<f64> {
-    let theta = theta_kelvin(pressure_hpa, temperature_c)?;
-    let qs = specific_humidity(temperature_c, pressure_hpa)?;
-    let lc = latent_heat_of_condensation(temperature_c)?;
+    let h = rh(temperature_c, dew_point_c)?;
 
-    Ok(theta * (1.0 + lc * qs / (cp * celsius_to_kelvin(temperature_c)?)))
+    let lv = latent_heat_of_condensation(temperature_c)?;
+
+    Ok(
+        tk * f64::powf(P0 / pd, Rd / cp)
+            * f64::powf(h, -rv * Rv / cp)
+            * f64::exp(lv * rv / cp / tk),
+    )
 }
 
 /// Given the pressure and equivalent potential temperature, assume saturation and calculate the
@@ -362,7 +338,7 @@ pub fn theta_e_saturated_kelvin(pressure_hpa: f64, temperature_c: f64) -> Result
 /// This function is useful if you were trying to calculate the temperature for plotting a
 /// moist adiabat on a skew-t log-p diagram.
 ///
-/// * `pressure_hpa` - the initial pressure of the parcel in hPa.
+/// * `pressure_hpa` - the initial pressure in hPa.
 /// * `theta_e_k` - the equivalent potential temperature in Kelvin.
 ///
 /// Returns: The temperature in Celsius.
@@ -372,7 +348,7 @@ pub fn temperature_c_from_theta_e_saturated_and_pressure(
     theta_e_k: f64,
 ) -> Result<f64> {
     find_root(
-        &|t_c| Ok(theta_e_saturated_kelvin(pressure_hpa, t_c)? - theta_e_k),
+        &|t_c| Ok(theta_e_kelvin(t_c, t_c, pressure_hpa)? - theta_e_k),
         -80.0,
         50.0,
     )
@@ -380,18 +356,19 @@ pub fn temperature_c_from_theta_e_saturated_and_pressure(
 
 /// Calculate the web bulb temperature.
 ///
-/// * `temperature_c` - the temperature of the parcel in Celsius.
-/// * `dew_point_c` - the dew point of the parcel in Celsius.
-/// * `pressure_hpa` - the pressure of the parcel in hPa
+/// * `temperature_c` - the temperature in Celsius.
+/// * `dew_point_c` - the dew point in Celsius.
+/// * `pressure_hpa` - the pressure in hPa
 ///
 /// Returns: The wet bulb temperature in Celsius.
 #[inline]
 pub fn wet_bulb_c(temperature_c: f64, dew_point_c: f64, pressure_hpa: f64) -> Result<f64> {
     let (p_lcl, t_lcl) = pressure_and_temperature_at_lcl(temperature_c, dew_point_c, pressure_hpa)?;
-    let theta_e = theta_e_saturated_kelvin(p_lcl, kelvin_to_celsius(t_lcl)?)?;
+    let t_lcl = kelvin_to_celsius(t_lcl)?;
+    let theta_e = theta_e_kelvin(t_lcl, t_lcl, p_lcl)?;
 
     find_root(
-        &|celsius| Ok(theta_e_saturated_kelvin(pressure_hpa, celsius)? - theta_e),
+        &|celsius| Ok(theta_e_kelvin(celsius, celsius, pressure_hpa)? - theta_e),
         dew_point_c,
         temperature_c,
     )
@@ -409,7 +386,7 @@ pub fn wet_bulb_c(temperature_c: f64, dew_point_c: f64, pressure_hpa: f64) -> Re
 pub fn latent_heat_of_condensation(temperature_c: f64) -> Result<f64> {
     // The table has values from -40.0 to 40.0. So from -100.0 to -40.0 is actually an exrapolation.
     // I graphed the values from the extrapolation, and the curve looks good, and is approaching the
-    // latent heat of sublimation, but does not exceed it. This seems very reasonable be to me,
+    // latent heat of sublimation, but does not exceed it. This seems very reasonable to me,
     // especially considering that a common approximation is to just us a constant value.
     if temperature_c < -100.0 || temperature_c > 60.0 {
         Err(InputOutOfRange)
@@ -421,11 +398,11 @@ pub fn latent_heat_of_condensation(temperature_c: f64) -> Result<f64> {
 
 /// Virtual temperature in Celsius
 ///
-/// From the Glossary of Meteorology. http://glossary.ametsoc.org/wiki/Virtual_temperature
+/// From the [Glossary of Meteorology].(http://glossary.ametsoc.org/wiki/Virtual_temperature)
 ///
-/// * `temperature_c` - the temperature of the parcel in Celsius.
-/// * `dew_point_c` - the dew point of the parcel in Celsius.
-/// * `pressure_hpa` - the pressure of the parcel in hPa
+/// * `temperature_c` - the temperature in Celsius.
+/// * `dew_point_c` - the dew point in Celsius.
+/// * `pressure_hpa` - the pressure in hPa
 ///
 /// Returns the virtual temperature in Celsius.
 #[inline]
@@ -440,13 +417,14 @@ pub fn virtual_temperature_c(
     temperature_c_from_theta(vt_k, pressure_hpa)
 }
 
-/// Convert wind speed (wind direct is the direction the wind is blowing from) into U-V components.
+/// Convert wind speed (wind direction is the direction the wind is blowing from) into
+/// U-V components.
 ///
 /// Returns a tuple `(u_mps, v_mps)`, which is the U and V wind components in meters per second.
 #[inline]
 pub fn spd_dir_to_uv(from_dir_in_degrees: f64, speed_in_knots: f64) -> (f64, f64) {
     let rads = from_dir_in_degrees.to_radians();
-    let spd_ms = speed_in_knots * 0.514444444;
+    let spd_ms = speed_in_knots * 0.514_444_444;
 
     (-spd_ms * rads.sin(), -spd_ms * rads.cos())
 }
@@ -457,7 +435,7 @@ pub fn spd_dir_to_uv(from_dir_in_degrees: f64, speed_in_knots: f64) -> (f64, f64
 #[inline]
 pub fn uv_to_spd_dir(u_mps: f64, v_mps: f64) -> (f64, f64) {
     let spd_ms = (u_mps.powi(2) + v_mps.powi(2)).sqrt();
-    let spd_knots = spd_ms * 1.9438445;
+    let spd_knots = spd_ms * 1.943_844_5;
 
     let mut degrees = 180.0 + 90.0 - v_mps.atan2(u_mps).to_degrees();
     while degrees < 0.0 {
@@ -472,6 +450,7 @@ pub fn uv_to_spd_dir(u_mps: f64, v_mps: f64) -> (f64, f64) {
 
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
 /// when finding wet bulb temperature.
+// FIXME: Update to use Brent's method.
 fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) -> Result<f64> {
     use std::f64;
     const MAX_IT: usize = 50;
@@ -779,22 +758,6 @@ mod test {
     }
 
     #[test]
-    fn test_temperature_kelvin_at_lcl() {
-        for t in temperatures() {
-            for dp in temperatures().filter(|dp| *dp <= t) {
-                match temperature_kelvin_at_lcl(t, dp) {
-                    Ok(lcl_t) => {
-                        assert!(lcl_t >= 0.0);
-                        assert!(lcl_t <= celsius_to_kelvin(t).unwrap());
-                    }
-                    Err(BelowAbsoluteZero) => { /* Ignore for now. */ }
-                    Err(_) => { /* These errors bubbled up, ignore. */ }
-                }
-            }
-        }
-    }
-
-    #[test]
     fn test_pressure_and_temperature_at_lcl() {
         for p in pressure_levels() {
             for t in temperatures() {
@@ -803,7 +766,7 @@ mod test {
                         Ok((p_lcl, t_lcl)) => {
                             let k = celsius_to_kelvin(t).unwrap();
                             assert!(p_lcl <= p);
-                            assert!(t_lcl <= k);
+                            assert!((t_lcl - k) < 0.001);
                             assert!(p_lcl > 0.0);
                             assert!(t_lcl > 0.0);
                         }
@@ -860,50 +823,33 @@ mod test {
     }
 
     #[test]
-    fn test_theta_e_saturated_kelvin() {
-        for p in pressure_levels() {
-            for t in temperatures() {
-                match theta_e_saturated_kelvin(p, t) {
-                    Ok(theta_es) => {
-                        let theta = theta_kelvin(p, t).unwrap();
-                        assert!(theta <= theta_es);
-                    }
-                    Err(_) => { /* Ignore errors, they were all passed up. */ }
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn test_theta_e_saturated_and_back() {
-        for p in pressure_levels() {
-            for t in temperatures() {
-                if let Ok(theta_e_sat) = theta_e_saturated_kelvin(p, t) {
-                    if let Ok(t_back) =
-                        temperature_c_from_theta_e_saturated_and_pressure(p, theta_e_sat)
-                    {
-                        println!(
-                            " p = {}, t = {}, theta_e_sat = {} and t_back = {}",
-                            p, t, theta_e_sat, t_back
-                        );
-                        assert!(approx_equal(t, t_back, 5.0e-3));
-                    }
-                }
-            }
-        }
-    }
-
-    #[test]
     fn test_theta_e_saturated_theta_e_theta_relationships() {
         for p in pressure_levels() {
             for t in temperatures() {
                 for dp in temperatures().filter(|dp| *dp <= t) {
                     if let Ok((theta, theta_e, theta_es)) = theta_kelvin(p, t)
                         .and_then(|theta| Ok((theta, theta_e_kelvin(t, dp, p)?)))
-                        .and_then(|pair| Ok((pair.0, pair.1, theta_e_saturated_kelvin(p, t)?)))
+                        .and_then(|pair| Ok((pair.0, pair.1, theta_e_kelvin(t, t, p)?)))
                     {
-                        assert!(theta <= theta_e && theta_e <= theta_es);
+                        println!("{} <= {} <= {}", theta, theta_e, theta_es);
+                        assert!(
+                            approx_lte(theta, theta_e, TOL) && approx_lte(theta_e, theta_es, TOL)
+                        );
                     }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_theta_e_saturated_there_and_back() {
+        for p in pressure_levels() {
+            for t in temperatures() {
+                if let Ok(t_back) = theta_e_kelvin(t, t, p).and_then(|theta_es| {
+                    temperature_c_from_theta_e_saturated_and_pressure(p, theta_es)
+                }) {
+                    println!("{} {} {}", t, t_back, (t - t_back).abs());
+                    assert!(approx_equal(t, t_back, 1.0e-7));
                 }
             }
         }
@@ -1001,5 +947,9 @@ mod test {
             assert_approx_eq!(calc_dir, dir, LOCAL_TOL, "Direction mismatch.");
             assert_approx_eq!(calc_spd, spd, LOCAL_TOL, "Speed mismatch.");
         }
+    }
+
+    fn approx_lte(a: f64, b: f64, tol: f64) -> bool {
+        (a - b) <= tol
     }
 }

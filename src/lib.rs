@@ -25,7 +25,3 @@ pub use error::*;
 //
 // Internal use only
 //
-
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;

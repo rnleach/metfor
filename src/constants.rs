@@ -6,19 +6,19 @@
 pub const g: f64 = 9.81;
 
 /// The gas constant for dry air. (J K<sup>-1</sup> kg<sup>-1</sup>)
-pub const R: f64 = 287.04;
+pub const Rd: f64 = 287.058;
 
 /// The gas constant for water vapor. (J K<sup>-1</sup> kg<sup>-1</sup>)
-pub const Rv: f64 = 461.55;
+pub const Rv: f64 = 461.5;
 
 /// Specific heat of dry air at constant pressure. (J K<sup>-1</sup> kg<sup>-1</sup>)
-pub const cp: f64 = 1004.0;
+pub const cp: f64 = 1005.0;
 
 /// Specific heat of dry air at constant volume. (J K<sup>-1</sup> kg<sup>-1</sup>)
-pub const cv: f64 = 717.0;
+pub const cv: f64 = 718.0;
 
 /// Ratio of R / Rv. (no units)
-pub const epsilon: f64 = R / Rv;
+pub const epsilon: f64 = Rd / Rv;
 
 /// Ratio of cp and cv. (unitless)
 pub const gamma: f64 = cp / cv;
