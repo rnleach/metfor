@@ -441,7 +441,7 @@ pub fn virtual_temperature_c(
 #[inline]
 pub fn spd_dir_to_uv(from_dir_in_degrees: f64, speed_in_knots: f64) -> (f64, f64) {
     let rads = from_dir_in_degrees.to_radians();
-    let spd_ms = speed_in_knots * 0.514_444_444;
+    let spd_ms = knots_to_mps(speed_in_knots);
 
     (-spd_ms * rads.sin(), -spd_ms * rads.cos())
 }
@@ -452,7 +452,7 @@ pub fn spd_dir_to_uv(from_dir_in_degrees: f64, speed_in_knots: f64) -> (f64, f64
 #[inline]
 pub fn uv_to_spd_dir(u_mps: f64, v_mps: f64) -> (f64, f64) {
     let spd_ms = (u_mps.powi(2) + v_mps.powi(2)).sqrt();
-    let spd_knots = spd_ms * 1.943_844_5;
+    let spd_knots = mps_to_knots(spd_ms);
 
     let mut degrees = 180.0 + 90.0 - v_mps.atan2(u_mps).to_degrees();
     while degrees < 0.0 {
@@ -463,6 +463,18 @@ pub fn uv_to_spd_dir(u_mps: f64, v_mps: f64) -> (f64, f64) {
     }
 
     (degrees, spd_knots)
+}
+
+/// Convert knots to m/s.
+#[inline]
+pub fn knots_to_mps(spd: f64) -> f64  {
+    spd * 0.514_444_444
+}
+
+/// Convert m/s to knots.
+#[inline]
+pub fn mps_to_knots(spd: f64) -> f64 {
+    spd * 1.943_844_5
 }
 
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
