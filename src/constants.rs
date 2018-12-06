@@ -2,6 +2,7 @@
 //!
 #![allow(non_upper_case_globals)]
 
+use types::*;
 /// Acceleration due to gravity at the Earth's surface. (m s<sup>-2</sup>)
 pub const g: f64 = 9.81;
 
@@ -23,6 +24,9 @@ pub const epsilon: f64 = Rd / Rv;
 /// Ratio of cp and cv. (unitless)
 pub const gamma: f64 = cp / cv;
 
+/// Absolute zero temperature.
+pub const ABSOLUTE_ZERO: Kelvin = Kelvin(ABSOLUTE_ZERO_K);
+
 pub(crate) const ABSOLUTE_ZERO_K: f64 = 0.0;
 pub(crate) const ABSOLUTE_ZERO_C: f64 = -273.15;
-pub(crate) const ABSOLUTE_ZERO_F: f64 = -459.67;
+// pub(crate) const ABSOLUTE_ZERO_F: f64 = -459.67;

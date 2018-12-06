@@ -15,13 +15,16 @@
 
 pub mod constants;
 pub use constants::*;
-
-mod functions;
-pub use functions::*;
-
-mod error;
 pub use error::*;
+pub use functions::*;
+pub use types::*;
 
 //
 // Internal use only
 //
+mod error;
+mod functions;
+mod types;
+
+#[cfg(test)]
+mod test_utils;
