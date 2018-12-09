@@ -12,7 +12,7 @@ pub trait Quantity: Copy + Debug + Display {
     fn borrow_inner(&self) -> &f64;
 
     /// Create a new instance of self by wrapping a value
-    fn pack(f64) -> Self;
+    fn pack(_: f64) -> Self;
 
     /// Unpack a wrapped value without any error checking.
     fn unpack(self) -> f64;
@@ -26,7 +26,7 @@ pub trait Quantity: Copy + Debug + Display {
 
 // Not exported
 
-use error::*;
+use crate::error::*;
 use std::fmt::{Debug, Display};
 
 macro_rules! implOpsForQuantity {

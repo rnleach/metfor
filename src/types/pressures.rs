@@ -1,9 +1,9 @@
 //! Pressure units
-use error::*;
+use crate::error::*;
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
-use types::Quantity;
+use crate::types::Quantity;
 
 /// Marker trait for Pressure types.
 pub trait Pressure: Quantity {}

@@ -1,9 +1,9 @@
 //! Specific energy units (energy per unit mass)
-use error::*;
+use crate::error::*;
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
-use types::Quantity;
+use crate::types::Quantity;
 
 /// Marker trait for specific energy types.
 pub trait SpecificEnergy: Quantity {}

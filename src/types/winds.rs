@@ -81,7 +81,7 @@ pub fn mps_to_knots(spd: f64) -> f64 {
 #[cfg(test)]
 mod test {
     use super::*;
-    use test_utils::*;
+    use crate::test_utils::*;
 
     const TOL: f64 = 1.0e-6;
 

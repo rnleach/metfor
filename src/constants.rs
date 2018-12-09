@@ -2,7 +2,7 @@
 //!
 #![allow(non_upper_case_globals)]
 
-use types::*;
+use crate::types::*;
 /// Acceleration due to gravity at the Earth's surface. (m s<sup>-2</sup>)
 pub const g: f64 = 9.81;
 

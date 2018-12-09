@@ -1,10 +1,10 @@
 //! Temperature units
-use constants::*;
-use error::*;
+use crate::constants::*;
+use crate::error::*;
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
-use types::Quantity;
+use crate::types::Quantity;
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
@@ -133,11 +133,11 @@ impl Display for Kelvin {
 #[cfg(test)]
 mod test {
     use super::*;
-    use test_utils::*;
+    use crate::test_utils::*;
 
     pub const TOL: f64 = 1.0e-9;
 
-    use error::MetForErr::*;
+    use crate::error::MetForErr::*;
 
     #[test]
     fn test_celsius_to_kelvin() {

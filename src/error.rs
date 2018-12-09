@@ -27,7 +27,7 @@ pub type Result<T> = ::std::result::Result<T, MetForErr>;
 
 impl Display for MetForErr {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        use MetForErr::*;
+        use crate::MetForErr::*;
 
         match self {
             BelowAbsoluteZero => write!(f, "temperature below absolute zero"),

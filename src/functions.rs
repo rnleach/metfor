@@ -1,8 +1,8 @@
-use constants::*;
-use error::MetForErr::*;
-use error::*;
+use crate::constants::*;
+use crate::error::MetForErr::*;
+use crate::error::*;
 
-use types::*;
+use crate::types::*;
 
 macro_rules! debug_validate {
     ($($val:expr),+) => (
@@ -641,7 +641,7 @@ fn find_root(f: &Fn(f64) -> Result<f64>, mut low_val: f64, mut high_val: f64) ->
 #[cfg(test)]
 mod test {
     use super::*;
-    use test_utils::{approx_equal, approx_lte, pressure_levels, temperatures};
+    use crate::test_utils::{approx_equal, approx_lte, pressure_levels, temperatures};
 
     const TOL: f64 = 1.0e-9;
 

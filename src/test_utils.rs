@@ -1,8 +1,8 @@
 //! Utilities for running unit tests.
 #![macro_use]
-use error::*;
+use crate::error::*;
 use std::ops::Sub;
-use types::*;
+use crate::types::*;
 
 pub fn approx_equal<L, R, T>(left: L, right: R, tol: T) -> bool
 where
