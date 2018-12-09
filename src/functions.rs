@@ -460,8 +460,8 @@ where
     let theta_e_val = Kelvin(
         naked_tk
             * f64::powf(P0 / pd, Rd / cp)
-            * f64::powf(h, -rv * Rv / cp)
-            * f64::exp(lv * rv / cp / naked_tk),
+            * f64::powf(h, -rv * (Rv / cp))
+            * f64::exp(lv * rv / cp.unpack() / naked_tk),
     );
 
     debug_validate!(theta_e_val);
