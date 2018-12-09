@@ -500,7 +500,8 @@ where
         },
         -80.0,
         50.0,
-    ).map(Celsius)
+    )
+    .map(Celsius)
 }
 
 /// Calculate the web bulb temperature.
@@ -537,7 +538,8 @@ where
         },
         dew_point_c,
         temperature_c,
-    ).map(Celsius)
+    )
+    .map(Celsius)
 }
 
 /// Latent heat of condensation for water.
@@ -679,8 +681,8 @@ mod test {
         for dp in [
             -80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 49.0,
         ]
-            .iter()
-            .map(|&dp| Celsius(dp))
+        .iter()
+        .map(|&dp| Celsius(dp))
         {
             let forward = vapor_pressure_liquid_water(dp).unwrap();
             let back = dew_point_from_vapor_pressure_over_liquid(forward).unwrap();

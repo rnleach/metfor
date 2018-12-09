@@ -88,7 +88,8 @@ pub fn pressure_levels() -> impl Iterator<Item = HectoPascal> {
         start: 1000.0,
         step: -10.0,
         stop: 100.0,
-    }.map(HectoPascal)
+    }
+    .map(HectoPascal)
 }
 
 pub fn temperatures() -> impl Iterator<Item = Celsius> {
@@ -96,5 +97,6 @@ pub fn temperatures() -> impl Iterator<Item = Celsius> {
         start: -100.0,
         step: 10.0,
         stop: 100.0,
-    }.map(Celsius)
+    }
+    .map(Celsius)
 }
