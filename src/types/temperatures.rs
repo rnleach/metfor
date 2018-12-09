@@ -1,10 +1,10 @@
 //! Temperature units
 use crate::constants::*;
 use crate::error::*;
+use crate::types::Quantity;
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
-use crate::types::Quantity;
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
