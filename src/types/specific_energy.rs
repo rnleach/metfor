@@ -1,5 +1,4 @@
 //! Specific energy units (energy per unit mass)
-use crate::error::*;
 use crate::types::{temperatures::Kelvin, Quantity};
 use std::cmp::Ordering;
 use std::fmt::Display;
@@ -40,8 +39,8 @@ macro_rules! implQuantity {
             }
 
             #[inline]
-            fn into_result(self) -> Result<f64> {
-                Ok(self.0)
+            fn into_option(self) -> Option<f64> {
+                Some(self.0)
             }
 
             #[inline]

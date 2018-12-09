@@ -15,14 +15,12 @@
 
 pub mod constants;
 pub use crate::constants::*;
-pub use crate::error::*;
 pub use crate::functions::*;
 pub use crate::types::*;
 
 //
 // Internal use only
 //
-mod error;
 mod functions;
 mod types;
 

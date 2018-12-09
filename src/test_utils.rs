@@ -1,6 +1,5 @@
 //! Utilities for running unit tests.
 #![macro_use]
-use crate::error::*;
 use crate::types::*;
 use std::ops::Sub;
 
@@ -56,8 +55,8 @@ impl Quantity for f64 {
         self
     }
 
-    fn into_result(self) -> Result<f64> {
-        Ok(self)
+    fn into_option(self) -> Option<f64> {
+        Some(self)
     }
 }
 

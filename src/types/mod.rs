@@ -20,13 +20,11 @@ pub trait Quantity: Copy + Debug + Display {
     /// Unwrap the value from the new type and check for validity, panic if contents are invalid.
     fn unwrap(self) -> f64;
 
-    /// Convert into a result that is an error if below absolute zero.
-    fn into_result(self) -> Result<f64>;
+    /// Convert into an option that `None` if below absolute zero.
+    fn into_option(self) -> Option<f64>;
 }
 
 // Not exported
-
-use crate::error::*;
 use std::fmt::{Debug, Display};
 
 macro_rules! implOpsForQuantity {

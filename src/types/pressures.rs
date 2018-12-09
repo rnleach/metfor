@@ -1,5 +1,4 @@
 //! Pressure units
-use crate::error::*;
 use crate::types::Quantity;
 use std::cmp::Ordering;
 use std::fmt::Display;
@@ -42,11 +41,11 @@ macro_rules! implQuantity {
             }
 
             #[inline]
-            fn into_result(self) -> Result<f64> {
+            fn into_option(self) -> Option<f64> {
                 if self.0 < 0.0 {
-                    Err(MetForErr::NegativePressure)
+                    None
                 } else {
-                    Ok(self.0)
+                    Some(self.0)
                 }
             }
 

@@ -1,6 +1,5 @@
 //! Temperature units
 use crate::constants::*;
-use crate::error::*;
 use crate::types::Quantity;
 use std::cmp::Ordering;
 use std::fmt::Display;
@@ -48,11 +47,11 @@ macro_rules! implQuantity {
             }
 
             #[inline]
-            fn into_result(self) -> Result<f64> {
+            fn into_option(self) -> Option<f64> {
                 if self < ABSOLUTE_ZERO {
-                    Err(MetForErr::BelowAbsoluteZero)
+                    None
                 } else {
-                    Ok(self.0)
+                    Some(self.0)
                 }
             }
 
@@ -137,8 +136,6 @@ mod test {
 
     pub const TOL: f64 = 1.0e-9;
 
-    use crate::error::MetForErr::*;
-
     #[test]
     fn test_celsius_to_kelvin() {
         assert!(approx_equal(
@@ -161,7 +158,7 @@ mod test {
             Kelvin(0.0),
             Kelvin(TOL)
         ));
-        assert!(Kelvin::from(Celsius(-300.0)).into_result().unwrap_err() == BelowAbsoluteZero);
+        assert!(Kelvin::from(Celsius(-300.0)).into_option().is_none());
     }
 
     #[test]
@@ -186,7 +183,7 @@ mod test {
             Celsius(-273.15),
             Celsius(TOL)
         ));
-        assert!(Celsius::from(Kelvin(-10.0)).into_result().unwrap_err() == BelowAbsoluteZero);
+        assert!(Celsius::from(Kelvin(-10.0)).into_option().is_none());
     }
 
     #[test]
@@ -215,7 +212,7 @@ mod test {
             Fahrenheit(-40.0),
             Fahrenheit(TOL)
         ));
-        assert!((ABSOLUTE_ZERO - Celsius(1.0)).into_result().unwrap_err() == BelowAbsoluteZero);
+        assert!((ABSOLUTE_ZERO - Celsius(1.0)).into_option().is_none());
     }
 
     #[test]
@@ -235,7 +232,7 @@ mod test {
             Celsius(-40.0),
             Celsius(TOL)
         ));
-        assert!((ABSOLUTE_ZERO - Fahrenheit(1.0)).into_result().unwrap_err() == BelowAbsoluteZero);
+        assert!((ABSOLUTE_ZERO - Fahrenheit(1.0)).into_option().is_none());
     }
 
     #[test]
