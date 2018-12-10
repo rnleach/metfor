@@ -38,28 +38,6 @@ where
     passes
 }
 
-impl Quantity for f64 {
-    fn borrow_inner(&self) -> &f64 {
-        &self
-    }
-
-    fn pack(val: f64) -> f64 {
-        val
-    }
-
-    fn unpack(self) -> f64 {
-        self
-    }
-
-    fn unwrap(self) -> f64 {
-        self
-    }
-
-    fn into_option(self) -> Option<f64> {
-        Some(self)
-    }
-}
-
 pub struct DRange {
     start: f64,
     step: f64,
