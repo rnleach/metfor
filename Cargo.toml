@@ -11,3 +11,10 @@ license-file = "LICENSE"
 exclude = ["**/*.rs.bk",".gitignore",".vscode/**/*"]
 categories = ["science"]
 keywords = ["weather","meteorology"]
+
+[features]
+default = []
+use_optional = ["optional"]
+
+[dependencies]
+optional = { version = "0.5.0", optional = true }

@@ -7,7 +7,7 @@ pub use self::temperatures::*;
 pub use self::winds::*;
 
 /// A quantity is a common super trait for types that represent units of measurement.
-pub trait Quantity: Copy + Debug + Display {
+pub trait Quantity: Copy + Debug + Display + Sized {
     /// Borrow the inner value
     fn borrow_inner(&self) -> &f64;
 
@@ -76,6 +76,20 @@ macro_rules! implOpsForQuantity {
                 self.borrow_inner().partial_cmp(other.borrow_inner())
             }
         }
+
+        #[cfg(feature = "use_optional")]
+        impl optional::Noned for $t
+        where
+            $t: Quantity,
+        {
+            fn is_none(&self) -> bool {
+                optional::Noned::is_none(self.borrow_inner())
+            }
+
+            fn get_none() -> $t {
+                $t::pack(optional::Noned::get_none())
+            }
+        }
     };
 }
 
@@ -83,3 +97,16 @@ mod pressures;
 mod specific_energy;
 mod temperatures;
 mod winds;
+
+#[cfg(all(test, feature = "use_optional"))]
+mod test {
+    use crate::types::temperatures::Celsius;
+    use optional::*;
+
+    #[test]
+    fn test_optional() {
+        let val: Optioned<Celsius> = none();
+
+        assert!(val.is_none());
+    }
+}
