@@ -1,10 +1,6 @@
 use crate::types::Quantity;
 
 impl Quantity for f64 {
-    fn borrow_inner(&self) -> &f64 {
-        &self
-    }
-
     fn pack(val: f64) -> f64 {
         val
     }
