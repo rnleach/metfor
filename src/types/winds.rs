@@ -1,8 +1,9 @@
 //! Wind units and vectors.
+use crate::types::VectorQuantity;
 use std::fmt::Display;
 
 /// Marker trait for Wind types.
-pub trait Wind: Copy {}
+pub trait Wind: VectorQuantity {}
 
 /// Wind direction and speed in knots.
 #[allow(missing_docs)]
@@ -12,6 +13,58 @@ pub struct WindSpdDir {
     pub direction: f64,
 }
 
+impl VectorQuantity for WindSpdDir {
+    #[inline]
+    fn pack(vals: (f64, f64)) -> Self {
+        WindSpdDir {
+            speed: vals.0,
+            direction: vals.1,
+        }
+    }
+
+    #[inline]
+    fn unpack(self) -> (f64, f64) {
+        (self.speed, self.direction)
+    }
+
+    #[inline]
+    fn unwrap(self) -> (f64, f64) {
+        if self.speed < 0.0 {
+            panic!("Speed cannot be less than 0.0!");
+        }
+
+        if self.direction < 0.0 || self.direction > 360.0 {
+            panic!("Wind direction not in 0 - 360 range.")
+        }
+
+        (self.speed, self.direction)
+    }
+
+    #[inline]
+    fn into_option(self) -> Option<(f64, f64)> {
+        if self.speed < 0.0 || self.direction < 0.0 || self.direction > 360.0 {
+            None
+        } else {
+            Some((self.speed, self.direction))
+        }
+    }
+}
+
+#[cfg(features = "use_optional")]
+impl optional::Noned for WindSpdDir {
+    #[inline]
+    fn is_none(&self) -> bool {
+        optional::Noned::is_none(self.speed) || optional::Noned::is_none(self.direction)
+    }
+
+    #[inline]
+    fn get_none() -> Self {
+        Self::pack((optional::Noned::get_none(), optional::Noned::get_none()))
+    }
+}
+
+impl Wind for WindSpdDir {}
+
 /// Wind in U and V components in m/s.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -20,7 +73,44 @@ pub struct WindUV {
     pub v: f64,
 }
 
-impl Wind for WindSpdDir {}
+impl VectorQuantity for WindUV {
+    #[inline]
+    fn pack(vals: (f64, f64)) -> Self {
+        WindUV {
+            u: vals.0,
+            v: vals.1,
+        }
+    }
+
+    #[inline]
+    fn unpack(self) -> (f64, f64) {
+        (self.u, self.v)
+    }
+
+    #[inline]
+    fn unwrap(self) -> (f64, f64) {
+        (self.u, self.v)
+    }
+
+    #[inline]
+    fn into_option(self) -> Option<(f64, f64)> {
+        Some((self.u, self.v))
+    }
+}
+
+#[cfg(features = "use_optional")]
+impl optional::Noned for WindUV {
+    #[inline]
+    fn is_none(&self) -> bool {
+        optional::Noned::is_none(self.u) || optional::Noned::is_none(self.v)
+    }
+
+    #[inline]
+    fn get_none() -> Self {
+        Self::pack((optional::Noned::get_none(), optional::Noned::get_none()))
+    }
+}
+
 impl Wind for WindUV {}
 
 impl From<WindUV> for WindSpdDir {

@@ -21,8 +21,23 @@ pub trait Quantity: Copy + Debug + Display + Sized + Borrow<f64> {
     /// Unwrap the value from the new type and check for validity, panic if contents are invalid.
     fn unwrap(self) -> f64;
 
-    /// Convert into an option that `None` if below absolute zero.
+    /// Convert into an option that is `None` if the content is invalid.
     fn into_option(self) -> Option<f64>;
+}
+
+/// A version of `Quantity` for vectors.
+pub trait VectorQuantity: Copy + Debug + Display + Sized {
+    /// Create a new instance of self by wrapping some values.
+    fn pack(_: (f64, f64)) -> Self;
+
+    /// Unpack a wrapped value without any error checking.
+    fn unpack(self) -> (f64, f64);
+
+    /// Unwrap the values from the new type and check validity, panic if contents are invalid.
+    fn unwrap(self) -> (f64, f64);
+
+    /// Convert into an option that is `None` if the content is invalid.
+    fn into_option(self) -> Option<(f64, f64)>;
 }
 
 // Not exported
@@ -38,6 +53,7 @@ macro_rules! implOpsForQuantity {
         {
             type Output = $t;
 
+            #[inline]
             fn add(self, rhs: T) -> $t {
                 let rhs = $t::from(rhs);
                 Self::pack(self.unpack() + rhs.unpack())
@@ -51,6 +67,7 @@ macro_rules! implOpsForQuantity {
         {
             type Output = $t;
 
+            #[inline]
             fn sub(self, rhs: T) -> $t {
                 let rhs = $t::from(rhs);
                 Self::pack(self.unpack() - rhs.unpack())
@@ -62,6 +79,7 @@ macro_rules! implOpsForQuantity {
             $t: From<T> + Quantity,
             T: Quantity,
         {
+            #[inline]
             fn eq(&self, other: &T) -> bool {
                 let other = $t::from(*other);
                 self.unpack() == other.unpack()
@@ -73,6 +91,7 @@ macro_rules! implOpsForQuantity {
             $t: From<T> + Quantity,
             T: Quantity,
         {
+            #[inline]
             fn partial_cmp(&self, other: &T) -> Option<Ordering> {
                 let other = $t::from(*other);
                 let other: &f64 = other.borrow();
@@ -86,10 +105,12 @@ macro_rules! implOpsForQuantity {
         where
             $t: Quantity,
         {
+            #[inline]
             fn is_none(&self) -> bool {
-                optional::Noned::is_none(self.borrow())
+                optional::Noned::is_none(Borrow::<f64>::borrow(self))
             }
 
+            #[inline]
             fn get_none() -> $t {
                 $t::pack(optional::Noned::get_none())
             }
