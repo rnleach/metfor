@@ -1,14 +1,13 @@
 #![macro_use]
 //! New type wrappers for meteorlogical units.
 
+pub use self::geopotential_height::*;
+pub use self::pressure_vertical_velocity::*;
 pub use self::pressures::*;
 pub use self::specific_energy::*;
 pub use self::temperatures::*;
 pub use self::unitless::*;
 pub use self::winds::*;
-
-// pub use self::pressure_vertical_velocity::*
-// pub use self::geopotential_height::*
 
 /// A quantity is a common super trait for types that represent units of measurement.
 pub trait Quantity: Copy + Debug + Display + Sized + Borrow<f64> {
@@ -35,16 +34,18 @@ pub trait VectorQuantity: Copy + Debug + Display + Sized {
     /// in a standard x-y cartesian coordinate system.
     fn unpack_xy(self) -> (f64, f64);
 
-    /// Unwrap the values from the new type and check validity, panic if contents are invalid. The 
+    /// Unwrap the values from the new type and check validity, panic if contents are invalid. The
     /// returned values represent the vector in a standard x-y cartesian coordinate system.
     fn unwrap_xy(self) -> (f64, f64);
 
-    /// Convert into an option that is `None` if the content is invalid. The returned values 
+    /// Convert into an option that is `None` if the content is invalid. The returned values
     /// represent the vector in a standard x-y cartesian coordinate system.
     fn into_option(self) -> Option<(f64, f64)>;
 }
 
+//
 // Not exported
+//
 use std::borrow::Borrow;
 use std::fmt::{Debug, Display};
 
@@ -134,7 +135,7 @@ macro_rules! implOpsForVectorQuantity {
             #[inline]
             fn add(self, rhs: T) -> $t {
                 let rhs = $t::from(rhs);
-                let (x, y) =  self.unpack_xy();
+                let (x, y) = self.unpack_xy();
                 let (rhs_x, rhs_y) = rhs.unpack_xy();
 
                 let x_res = x + rhs_x;
@@ -154,7 +155,7 @@ macro_rules! implOpsForVectorQuantity {
             #[inline]
             fn sub(self, rhs: T) -> $t {
                 let rhs = $t::from(rhs);
-                let (x, y) =  self.unpack_xy();
+                let (x, y) = self.unpack_xy();
                 let (rhs_x, rhs_y) = rhs.unpack_xy();
 
                 let x_res = x - rhs_x;
@@ -174,13 +175,15 @@ macro_rules! implOpsForVectorQuantity {
                 let rhs = $t::from(*rhs);
                 let (x, y) = self.unpack_xy();
                 let (rhs_x, rhs_y) = rhs.unpack_xy();
-                
+
                 x == rhs_x && y == rhs_y
             }
         }
     };
 }
 
+mod geopotential_height;
+mod pressure_vertical_velocity;
 mod pressures;
 mod specific_energy;
 mod temperatures;

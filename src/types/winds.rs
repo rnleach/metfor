@@ -22,7 +22,10 @@ impl VectorQuantity for WindSpdDir {
     fn pack_xy(vals: (f64, f64)) -> Self {
         let (direction, speed_kt) = from_cart_to_wind(vals.0, vals.1);
 
-        WindSpdDir {speed_kt, direction}
+        WindSpdDir {
+            speed_kt,
+            direction,
+        }
     }
 
     #[inline]
@@ -139,11 +142,13 @@ implOpsForVectorQuantity!(WindUV);
 impl From<WindUV> for WindSpdDir {
     #[inline]
     fn from(wind: WindUV) -> Self {
-
         let (direction, speed) = from_cart_to_wind(wind.u, wind.v);
         let speed_kt = mps_to_knots(speed);
 
-        WindSpdDir { direction, speed_kt }
+        WindSpdDir {
+            direction,
+            speed_kt,
+        }
     }
 }
 
@@ -169,8 +174,7 @@ fn mps_to_knots(spd: f64) -> f64 {
     spd * 1.943_844_5
 }
 
-
-/// Convert from standard cartesian coordinate vectors to meteorological wind from direction at 
+/// Convert from standard cartesian coordinate vectors to meteorological wind from direction at
 /// speed coordinates.
 ///
 /// Returns a tuple (direction, speed)
@@ -187,7 +191,6 @@ fn from_cart_to_wind(x: f64, y: f64) -> (f64, f64) {
     }
 
     (direction, spd)
-
 }
 
 /// Convert from meteorological wind from direction at speed coordinates to standard x-y cartesian
