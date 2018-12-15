@@ -1,35 +1,38 @@
 //! Wind units and vectors.
 use crate::types::VectorQuantity;
 use std::fmt::Display;
+use std::ops::{Add, Sub};
 
 /// Marker trait for Wind types.
 pub trait Wind: VectorQuantity {}
 
+/*--------------------------------------------------------------------------------------------------
+                        Wind as speed in knots and the direction it is coming from.
+--------------------------------------------------------------------------------------------------*/
 /// Wind direction and speed in knots.
 #[allow(missing_docs)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub struct WindSpdDir {
-    pub speed: f64,
+    pub speed_kt: f64,
     pub direction: f64,
 }
 
 impl VectorQuantity for WindSpdDir {
     #[inline]
-    fn pack(vals: (f64, f64)) -> Self {
-        WindSpdDir {
-            speed: vals.0,
-            direction: vals.1,
-        }
+    fn pack_xy(vals: (f64, f64)) -> Self {
+        let (direction, speed_kt) = from_cart_to_wind(vals.0, vals.1);
+
+        WindSpdDir {speed_kt, direction}
     }
 
     #[inline]
-    fn unpack(self) -> (f64, f64) {
-        (self.speed, self.direction)
+    fn unpack_xy(self) -> (f64, f64) {
+        from_wind_to_cart(self.direction, self.speed_kt)
     }
 
     #[inline]
-    fn unwrap(self) -> (f64, f64) {
-        if self.speed < 0.0 {
+    fn unwrap_xy(self) -> (f64, f64) {
+        if self.speed_kt < 0.0 {
             panic!("Speed cannot be less than 0.0!");
         }
 
@@ -37,15 +40,15 @@ impl VectorQuantity for WindSpdDir {
             panic!("Wind direction not in 0 - 360 range.")
         }
 
-        (self.speed, self.direction)
+        self.unpack_xy()
     }
 
     #[inline]
     fn into_option(self) -> Option<(f64, f64)> {
-        if self.speed < 0.0 || self.direction < 0.0 || self.direction > 360.0 {
+        if self.speed_kt < 0.0 || self.direction < 0.0 || self.direction > 360.0 {
             None
         } else {
-            Some((self.speed, self.direction))
+            Some(self.unpack_xy())
         }
     }
 }
@@ -63,11 +66,21 @@ impl optional::Noned for WindSpdDir {
     }
 }
 
-impl Wind for WindSpdDir {}
+impl Display for WindSpdDir {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "{:03.0} at {:02.0}kt", self.direction, self.speed_kt)
+    }
+}
 
+impl Wind for WindSpdDir {}
+implOpsForVectorQuantity!(WindSpdDir);
+
+/*--------------------------------------------------------------------------------------------------
+                                   Wind as U and V components.
+--------------------------------------------------------------------------------------------------*/
 /// Wind in U and V components in m/s.
 #[allow(missing_docs)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub struct WindUV {
     pub u: f64,
     pub v: f64,
@@ -75,7 +88,7 @@ pub struct WindUV {
 
 impl VectorQuantity for WindUV {
     #[inline]
-    fn pack(vals: (f64, f64)) -> Self {
+    fn pack_xy(vals: (f64, f64)) -> Self {
         WindUV {
             u: vals.0,
             v: vals.1,
@@ -83,12 +96,12 @@ impl VectorQuantity for WindUV {
     }
 
     #[inline]
-    fn unpack(self) -> (f64, f64) {
+    fn unpack_xy(self) -> (f64, f64) {
         (self.u, self.v)
     }
 
     #[inline]
-    fn unwrap(self) -> (f64, f64) {
+    fn unwrap_xy(self) -> (f64, f64) {
         (self.u, self.v)
     }
 
@@ -111,63 +124,89 @@ impl optional::Noned for WindUV {
     }
 }
 
-impl Wind for WindUV {}
-
-impl From<WindUV> for WindSpdDir {
-    #[inline]
-    fn from(wind: WindUV) -> Self {
-        let spd_ms = (wind.u.powi(2) + wind.v.powi(2)).sqrt();
-        let speed = mps_to_knots(spd_ms);
-
-        let mut direction = 180.0 + 90.0 - wind.v.atan2(wind.u).to_degrees();
-        while direction < 0.0 {
-            direction += 360.0;
-        }
-        while direction >= 360.0 {
-            direction -= 360.0;
-        }
-
-        WindSpdDir { direction, speed }
-    }
-}
-
-impl From<WindSpdDir> for WindUV {
-    #[inline]
-    fn from(wind: WindSpdDir) -> Self {
-        let rads = wind.direction.to_radians();
-        let spd_ms = knots_to_mps(wind.speed);
-
-        let u = -spd_ms * rads.sin();
-        let v = -spd_ms * rads.cos();
-
-        WindUV { u, v }
-    }
-}
-
-impl Display for WindSpdDir {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:03.0} at {:02.0}kt", self.direction, self.speed)
-    }
-}
-
 impl Display for WindUV {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "({:.1}m/s, {:.1}m/s)", self.u, self.v)
     }
 }
 
+impl Wind for WindUV {}
+implOpsForVectorQuantity!(WindUV);
+
+/*--------------------------------------------------------------------------------------------------
+                                         Wind conversions.
+--------------------------------------------------------------------------------------------------*/
+impl From<WindUV> for WindSpdDir {
+    #[inline]
+    fn from(wind: WindUV) -> Self {
+
+        let (direction, speed) = from_cart_to_wind(wind.u, wind.v);
+        let speed_kt = mps_to_knots(speed);
+
+        WindSpdDir { direction, speed_kt }
+    }
+}
+
+impl From<WindSpdDir> for WindUV {
+    #[inline]
+    fn from(wind: WindSpdDir) -> Self {
+        let speed = knots_to_mps(wind.speed_kt);
+        let (u, v) = from_wind_to_cart(wind.direction, speed);
+
+        WindUV { u, v }
+    }
+}
+
 /// Convert knots to m/s.
 #[inline]
-pub fn knots_to_mps(spd: f64) -> f64 {
+fn knots_to_mps(spd: f64) -> f64 {
     spd * 0.514_444_444
 }
 
 /// Convert m/s to knots.
 #[inline]
-pub fn mps_to_knots(spd: f64) -> f64 {
+fn mps_to_knots(spd: f64) -> f64 {
     spd * 1.943_844_5
 }
 
+
+/// Convert from standard cartesian coordinate vectors to meteorological wind from direction at 
+/// speed coordinates.
+///
+/// Returns a tuple (direction, speed)
+#[inline]
+fn from_cart_to_wind(x: f64, y: f64) -> (f64, f64) {
+    let spd = (x.powi(2) + y.powi(2)).sqrt();
+
+    let mut direction = 180.0 + 90.0 - y.atan2(x).to_degrees();
+    while direction < 0.0 {
+        direction += 360.0;
+    }
+    while direction >= 360.0 {
+        direction -= 360.0;
+    }
+
+    (direction, spd)
+
+}
+
+/// Convert from meteorological wind from direction at speed coordinates to standard x-y cartesian
+/// coordinates.
+///
+/// Returns a tuple (x_velocity, y_velocity)
+#[inline]
+fn from_wind_to_cart(dir: f64, spd: f64) -> (f64, f64) {
+    let rads = dir.to_radians();
+
+    let u = -spd * rads.sin();
+    let v = -spd * rads.cos();
+
+    (u, v)
+}
+
+/*--------------------------------------------------------------------------------------------------
+                                              Unit Tests.
+--------------------------------------------------------------------------------------------------*/
 #[cfg(test)]
 mod test {
     use super::*;
@@ -208,7 +247,7 @@ mod test {
 
         for &((dir, spd), (u, v)) in &spd_dir_to_uv_data {
             let dir_spd = WindSpdDir {
-                speed: spd,
+                speed_kt: spd,
                 direction: dir,
             };
             let WindUV {
@@ -228,7 +267,7 @@ mod test {
         for &((dir, spd), (u, v)) in &spd_dir_to_uv_data {
             let uv_wind = WindUV { u, v };
             let WindSpdDir {
-                speed: calc_spd,
+                speed_kt: calc_spd,
                 direction: calc_dir,
             } = WindSpdDir::from(uv_wind);
 

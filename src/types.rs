@@ -27,16 +27,20 @@ pub trait Quantity: Copy + Debug + Display + Sized + Borrow<f64> {
 
 /// A version of `Quantity` for vectors.
 pub trait VectorQuantity: Copy + Debug + Display + Sized {
-    /// Create a new instance of self by wrapping some values.
-    fn pack(_: (f64, f64)) -> Self;
+    /// Create a new instance of self by wrapping some values. This must be x-y coordinates from the
+    /// standard cartesian coordinate system.
+    fn pack_xy(_: (f64, f64)) -> Self;
 
-    /// Unpack a wrapped value without any error checking.
-    fn unpack(self) -> (f64, f64);
+    /// Unpack a wrapped value without any error checking. The returned values represent the vector
+    /// in a standard x-y cartesian coordinate system.
+    fn unpack_xy(self) -> (f64, f64);
 
-    /// Unwrap the values from the new type and check validity, panic if contents are invalid.
-    fn unwrap(self) -> (f64, f64);
+    /// Unwrap the values from the new type and check validity, panic if contents are invalid. The 
+    /// returned values represent the vector in a standard x-y cartesian coordinate system.
+    fn unwrap_xy(self) -> (f64, f64);
 
-    /// Convert into an option that is `None` if the content is invalid.
+    /// Convert into an option that is `None` if the content is invalid. The returned values 
+    /// represent the vector in a standard x-y cartesian coordinate system.
     fn into_option(self) -> Option<(f64, f64)>;
 }
 
@@ -113,6 +117,65 @@ macro_rules! implOpsForQuantity {
             #[inline]
             fn get_none() -> $t {
                 $t::pack(optional::Noned::get_none())
+            }
+        }
+    };
+}
+
+macro_rules! implOpsForVectorQuantity {
+    ($t:tt) => {
+        impl<T> Add<T> for $t
+        where
+            $t: From<T> + VectorQuantity,
+            T: VectorQuantity,
+        {
+            type Output = $t;
+
+            #[inline]
+            fn add(self, rhs: T) -> $t {
+                let rhs = $t::from(rhs);
+                let (x, y) =  self.unpack_xy();
+                let (rhs_x, rhs_y) = rhs.unpack_xy();
+
+                let x_res = x + rhs_x;
+                let y_res = y + rhs_y;
+
+                Self::pack_xy((x_res, y_res))
+            }
+        }
+
+        impl<T> Sub<T> for $t
+        where
+            $t: From<T> + VectorQuantity,
+            T: VectorQuantity,
+        {
+            type Output = $t;
+
+            #[inline]
+            fn sub(self, rhs: T) -> $t {
+                let rhs = $t::from(rhs);
+                let (x, y) =  self.unpack_xy();
+                let (rhs_x, rhs_y) = rhs.unpack_xy();
+
+                let x_res = x - rhs_x;
+                let y_res = y - rhs_y;
+
+                Self::pack_xy((x_res, y_res))
+            }
+        }
+
+        impl<T> PartialEq<T> for $t
+        where
+            $t: From<T> + VectorQuantity,
+            T: VectorQuantity,
+        {
+            #[inline]
+            fn eq(&self, rhs: &T) -> bool {
+                let rhs = $t::from(*rhs);
+                let (x, y) = self.unpack_xy();
+                let (rhs_x, rhs_y) = rhs.unpack_xy();
+                
+                x == rhs_x && y == rhs_y
             }
         }
     };
