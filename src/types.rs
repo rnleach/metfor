@@ -120,6 +120,40 @@ macro_rules! implOpsForQuantity {
                 $t::pack(optional::Noned::get_none())
             }
         }
+
+        #[cfg(feature = "use_optional")]
+        impl optional::OptEq for $t
+        where
+            $t: Quantity,
+        {
+            #[inline]
+            fn opt_eq(&self, other: &Self) -> bool {
+                self == other
+            }
+        }
+
+        #[cfg(feature = "use_optional")]
+        impl optional::OptOrd for $t
+        where
+            $t: Quantity + optional::Noned,
+        {
+            #[inline]
+            fn opt_cmp(&self, other: &Self) -> Ordering {
+                use optional::Noned;
+
+                if self.is_none() {
+                    if other.is_none() {
+                        Ordering::Equal
+                    } else {
+                        Ordering::Less
+                    }
+                } else if other.is_none() {
+                    Ordering::Greater
+                } else {
+                    self.partial_cmp(other).unwrap()
+                }
+            }
+        }
     };
 }
 
