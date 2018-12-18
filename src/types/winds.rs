@@ -56,16 +56,19 @@ impl VectorQuantity for WindSpdDir {
     }
 }
 
-#[cfg(features = "use_optional")]
+#[cfg(feature = "use_optional")]
 impl optional::Noned for WindSpdDir {
     #[inline]
     fn is_none(&self) -> bool {
-        optional::Noned::is_none(self.speed) || optional::Noned::is_none(self.direction)
+        optional::Noned::is_none(&self.speed_kt) || optional::Noned::is_none(&self.direction)
     }
 
     #[inline]
     fn get_none() -> Self {
-        Self::pack((optional::Noned::get_none(), optional::Noned::get_none()))
+        Self {
+            speed_kt: optional::Noned::get_none(),
+            direction: optional::Noned::get_none(),
+        }
     }
 }
 
@@ -114,16 +117,16 @@ impl VectorQuantity for WindUV {
     }
 }
 
-#[cfg(features = "use_optional")]
+#[cfg(feature = "use_optional")]
 impl optional::Noned for WindUV {
     #[inline]
     fn is_none(&self) -> bool {
-        optional::Noned::is_none(self.u) || optional::Noned::is_none(self.v)
+        optional::Noned::is_none(&self.u) || optional::Noned::is_none(&self.v)
     }
 
     #[inline]
     fn get_none() -> Self {
-        Self::pack((optional::Noned::get_none(), optional::Noned::get_none()))
+        Self::pack_xy((optional::Noned::get_none(), optional::Noned::get_none()))
     }
 }
 
