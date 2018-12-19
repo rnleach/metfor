@@ -213,6 +213,17 @@ macro_rules! implOpsForVectorQuantity {
                 x == rhs_x && y == rhs_y
             }
         }
+
+        #[cfg(feature = "use_optional")]
+        impl optional::OptEq for $t
+        where
+            $t: VectorQuantity,
+        {
+            #[inline]
+            fn opt_eq(&self, other: &Self) -> bool {
+                self == other
+            }
+        }
     };
 }
 
