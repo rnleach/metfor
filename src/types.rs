@@ -1,7 +1,7 @@
 #![macro_use]
 //! New type wrappers for meteorlogical units.
 
-pub use self::geopotential_height::*;
+pub use self::length::*;
 pub use self::pressure_vertical_velocity::*;
 pub use self::pressures::*;
 pub use self::specific_energy::*;
@@ -227,7 +227,7 @@ macro_rules! implOpsForVectorQuantity {
     };
 }
 
-mod geopotential_height;
+mod length;
 mod pressure_vertical_velocity;
 mod pressures;
 mod specific_energy;

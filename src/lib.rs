@@ -1,3 +1,4 @@
+#![doc(test(attr(deny(warnings))))]
 #![warn(missing_docs)]
 /*!
 
