@@ -4,10 +4,13 @@ use crate::types::Quantity;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
+
+/// Marker trait for temperature differences.
+pub trait TempDiff: Quantity + PartialOrd + PartialEq {}
 
 /// Temperature in Fahrenheit units.
 #[derive(Clone, Copy, Debug)]
@@ -25,7 +28,22 @@ impl Temperature for Fahrenheit {}
 impl Temperature for Celsius {}
 impl Temperature for Kelvin {}
 
-macro_rules! implQuantity {
+/// Temperature difference in Fahrenheit units.
+#[derive(Clone, Copy, Debug)]
+pub struct FahrenheitDiff(pub f64);
+
+/// Temperature difference in Celsius units.
+#[derive(Clone, Copy, Debug)]
+pub struct CelsiusDiff(pub f64);
+
+/// Temperature difference in Kelvin units.
+pub type KelvinDiff = CelsiusDiff;
+
+impl TempDiff for Fahrenheit {}
+impl TempDiff for Celsius {}
+impl TempDiff for Kelvin {}
+
+macro_rules! implQuantityForT {
     ($t:tt) => {
         impl Quantity for $t {
             #[inline]
@@ -64,13 +82,138 @@ macro_rules! implQuantity {
             }
         }
 
-        implOpsForQuantity!($t);
+        implNonedForQuantity!($t);
+        implMulDivOpsForQuantity!($t);
+        implOrdEqOpsForQuantity!($t);
     };
 }
 
-implQuantity!(Fahrenheit);
-implQuantity!(Celsius);
-implQuantity!(Kelvin);
+implQuantityForT!(Fahrenheit);
+implQuantityForT!(Celsius);
+implQuantityForT!(Kelvin);
+
+macro_rules! implQuantityForDiffT {
+    ($t:tt) => {
+        impl Quantity for $t {
+            #[inline]
+            fn pack(val: f64) -> Self {
+                $t(val)
+            }
+
+            #[inline]
+            fn unpack(self) -> f64 {
+                self.0
+            }
+
+            #[inline]
+            fn unwrap(self) -> f64 {
+                self.0
+            }
+
+            #[inline]
+            fn into_option(self) -> Option<f64> {
+                Some(self.0)
+            }
+        }
+
+        impl Borrow<f64> for $t {
+            #[inline]
+            fn borrow(&self) -> &f64 {
+                &self.0
+            }
+        }
+
+        impl Neg for $t {
+            type Output = $t;
+
+            fn neg(self) -> Self::Output {
+                Self::Output::pack(-self.unpack())
+            }
+        }
+
+        implOpsForQuantity!($t);
+    };
+}
+implQuantityForDiffT!(FahrenheitDiff);
+implQuantityForDiffT!(CelsiusDiff);
+
+impl<T> Sub<T> for Celsius
+where
+    Celsius: From<T>,
+{
+    type Output = CelsiusDiff;
+
+    #[inline]
+    fn sub(self, rhs: T) -> Self::Output {
+        let rhs = Celsius::from(rhs);
+        Self::Output::pack(self.unpack() - rhs.unpack())
+    }
+}
+
+impl<T> Add<T> for Celsius
+where
+    CelsiusDiff: From<T>,
+{
+    type Output = Celsius;
+
+    #[inline]
+    fn add(self, rhs: T) -> Self::Output {
+        let rhs = CelsiusDiff::from(rhs);
+        Self::Output::pack(self.unpack() + rhs.unpack())
+    }
+}
+
+impl<T> Sub<T> for Kelvin
+where
+    Kelvin: From<T>,
+{
+    type Output = KelvinDiff;
+
+    #[inline]
+    fn sub(self, rhs: T) -> Self::Output {
+        let rhs = Kelvin::from(rhs);
+        Self::Output::pack(self.unpack() - rhs.unpack())
+    }
+}
+
+impl<T> Add<T> for Kelvin
+where
+    CelsiusDiff: From<T>,
+{
+    type Output = Kelvin;
+
+    #[inline]
+    fn add(self, rhs: T) -> Self::Output {
+        let rhs = CelsiusDiff::from(rhs);
+        Self::Output::pack(self.unpack() + rhs.unpack())
+    }
+}
+
+impl<T> Sub<T> for Fahrenheit
+where
+    Fahrenheit: From<T>,
+{
+    type Output = FahrenheitDiff;
+
+    #[inline]
+    fn sub(self, rhs: T) -> Self::Output {
+        let rhs = Fahrenheit::from(rhs);
+        Self::Output::pack(self.unpack() - rhs.unpack())
+    }
+}
+
+impl<T> Add<T> for Fahrenheit
+where
+    FahrenheitDiff: From<T>,
+{
+    type Output = Fahrenheit;
+
+    #[inline]
+    fn add(self, rhs: T) -> Self::Output {
+        let rhs = FahrenheitDiff::from(rhs);
+        Self::Output::pack(self.unpack() + rhs.unpack())
+    }
+}
 
 impl From<Celsius> for Fahrenheit {
     #[inline]
@@ -114,6 +257,20 @@ impl From<Fahrenheit> for Kelvin {
     }
 }
 
+impl From<FahrenheitDiff> for CelsiusDiff {
+    #[inline]
+    fn from(f: FahrenheitDiff) -> Self {
+        CelsiusDiff(f.0 / 1.8)
+    }
+}
+
+impl From<CelsiusDiff> for FahrenheitDiff {
+    #[inline]
+    fn from(c: CelsiusDiff) -> Self {
+        FahrenheitDiff(c.0 * 1.8)
+    }
+}
+
 impl Display for Celsius {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{00B0}C", self.0)
@@ -132,6 +289,18 @@ impl Display for Kelvin {
     }
 }
 
+impl Display for CelsiusDiff {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "{:.1}\u{0394}\u{00B0}(C or K)", self.0)
+    }
+}
+
+impl Display for FahrenheitDiff {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "{:.1}\u{0394}\u{00B0}F", self.0)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -144,22 +313,22 @@ mod test {
         assert!(approx_equal(
             Kelvin::from(Celsius(-10.0)),
             Kelvin(263.15),
-            Kelvin(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Kelvin::from(Celsius(0.0)),
             Kelvin(273.15),
-            Kelvin(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Kelvin::from(Celsius(10.0)),
             Kelvin(283.15),
-            Kelvin(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Kelvin::from(Celsius(-273.15)),
             Kelvin(0.0),
-            Kelvin(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(Kelvin::from(Celsius(-300.0)).into_option().is_none());
     }
@@ -169,22 +338,22 @@ mod test {
         assert!(approx_equal(
             Celsius::from(Kelvin(263.15)),
             Celsius(-10.0),
-            Celsius(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Celsius::from(Kelvin(273.15)),
             Celsius(0.0),
-            Celsius(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Celsius::from(Kelvin(283.15)),
             Celsius(10.0),
-            Celsius(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Celsius::from(Kelvin(0.0)),
             Celsius(-273.15),
-            Celsius(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(Celsius::from(Kelvin(-10.0)).into_option().is_none());
     }
@@ -194,7 +363,7 @@ mod test {
         for celsius in temperatures() {
             let kelvin = Kelvin::from(celsius);
             let back_to_celsius = Celsius::from(kelvin);
-            assert!(approx_equal(celsius, back_to_celsius, Celsius(TOL)));
+            assert!(approx_equal(celsius, back_to_celsius, CelsiusDiff(TOL)));
         }
     }
 
@@ -203,19 +372,19 @@ mod test {
         assert!(approx_equal(
             Fahrenheit::from(Celsius(0.0)),
             Fahrenheit(32.0),
-            Fahrenheit(TOL)
+            FahrenheitDiff(TOL)
         ));
         assert!(approx_equal(
             Fahrenheit::from(Celsius(100.0)),
             Fahrenheit(212.0),
-            Fahrenheit(TOL)
+            FahrenheitDiff(TOL)
         ));
         assert!(approx_equal(
             Fahrenheit::from(Celsius(-40.0)),
             Fahrenheit(-40.0),
-            Fahrenheit(TOL)
+            FahrenheitDiff(TOL)
         ));
-        assert!((ABSOLUTE_ZERO - Celsius(1.0)).into_option().is_none());
+        assert!((ABSOLUTE_ZERO + -CelsiusDiff(1.0)).into_option().is_none());
     }
 
     #[test]
@@ -223,19 +392,21 @@ mod test {
         assert!(approx_equal(
             Celsius::from(Fahrenheit(32.0)),
             Celsius(0.0),
-            Celsius(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Celsius::from(Fahrenheit(212.0)),
             Celsius(100.0),
-            Celsius(TOL)
+            CelsiusDiff(TOL)
         ));
         assert!(approx_equal(
             Celsius::from(Fahrenheit(-40.0)),
             Celsius(-40.0),
-            Celsius(TOL)
+            CelsiusDiff(TOL)
         ));
-        assert!((ABSOLUTE_ZERO - Fahrenheit(1.0)).into_option().is_none());
+        assert!((ABSOLUTE_ZERO + -FahrenheitDiff(1.0))
+            .into_option()
+            .is_none());
     }
 
     #[test]
@@ -243,7 +414,7 @@ mod test {
         for celsius in temperatures() {
             let fahrenheit = Fahrenheit::from(celsius);
             let back_to_celsius = Celsius::from(fahrenheit);
-            assert!(approx_equal(celsius, back_to_celsius, Celsius(TOL)));
+            assert!(approx_equal(celsius, back_to_celsius, CelsiusDiff(TOL)));
         }
     }
 }

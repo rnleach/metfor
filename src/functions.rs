@@ -648,7 +648,7 @@ mod test {
             let kelvin = Kelvin::from(celsius);
             let theta = theta(HectoPascal(1000.0), celsius);
 
-            assert!(approx_equal(kelvin, theta, Kelvin(TOL)));
+            assert!(approx_equal(kelvin, theta, CelsiusDiff(TOL)));
         }
     }
 
@@ -658,7 +658,7 @@ mod test {
             let kelvin = Kelvin::from(celsius);
             let back_to_celsius = temperature_from_theta(kelvin, HectoPascal(1000.0));
 
-            assert!(approx_equal(celsius, back_to_celsius, Celsius(TOL)));
+            assert!(approx_equal(celsius, back_to_celsius, CelsiusDiff(TOL)));
         }
     }
 
@@ -668,7 +668,7 @@ mod test {
             for celsius in temperatures() {
                 let theta = theta(p, celsius);
                 let back_to_celsius = Celsius::from(temperature_from_theta(theta, p));
-                assert!(approx_equal(celsius, back_to_celsius, Celsius(TOL)));
+                assert!(approx_equal(celsius, back_to_celsius, CelsiusDiff(TOL)));
             }
         }
     }
@@ -683,7 +683,7 @@ mod test {
         {
             let forward = vapor_pressure_liquid_water(dp).unwrap();
             let back = dew_point_from_vapor_pressure_over_liquid(forward).unwrap();
-            assert!(approx_equal(dp, back, Celsius(TOL)));
+            assert!(approx_equal(dp, back, CelsiusDiff(TOL)));
         }
     }
 
@@ -695,7 +695,7 @@ mod test {
         {
             let forward = vapor_pressure_ice(dp).unwrap();
             let back = frost_point_from_vapor_pressure_over_ice(forward).unwrap();
-            assert!(approx_equal(dp, back, Celsius(TOL)));
+            assert!(approx_equal(dp, back, CelsiusDiff(TOL)));
         }
     }
 
@@ -760,7 +760,7 @@ mod test {
                                 back,
                                 f64::abs(dp.unwrap() - back.unwrap())
                             );
-                            assert!(approx_equal(dp, back, Celsius(1.0e-2)));
+                            assert!(approx_equal(dp, back, CelsiusDiff(1.0e-2)));
                         }
                     }
                     None => { /* Ignore this for now.*/ }
@@ -779,7 +779,7 @@ mod test {
                             let k = Kelvin::from(t);
                             assert!(p_lcl <= p);
                             if t == dp {
-                                assert!(approx_equal(t_lcl, k, Kelvin(0.001)));
+                                assert!(approx_equal(t_lcl, k, CelsiusDiff(0.001)));
                             }
 
                             // Check for valid values
@@ -849,8 +849,8 @@ mod test {
                     {
                         println!("{} <= {} <= {}", theta, theta_e, theta_es);
                         assert!(
-                            approx_lte(theta, theta_e, Kelvin(TOL))
-                                && approx_lte(theta_e, theta_es, Kelvin(TOL))
+                            approx_lte(theta, theta_e, CelsiusDiff(TOL))
+                                && approx_lte(theta_e, theta_es, CelsiusDiff(TOL))
                         );
                     }
                 }
@@ -866,7 +866,7 @@ mod test {
                     temperature_from_theta_e_saturated_and_pressure(p, theta_es)
                 }) {
                     println!("{} {} {}", t, t_back, (t.unwrap() - t_back.unwrap()).abs());
-                    assert!(approx_equal(t, t_back, Celsius(1.0e-7)));
+                    assert!(approx_equal(t, t_back, CelsiusDiff(1.0e-7)));
                 }
             }
         }
@@ -919,7 +919,7 @@ mod test {
             assert!(approx_equal(
                 target,
                 virtual_temperature(t, dp, p).unwrap(),
-                Celsius(0.05)
+                CelsiusDiff(0.05)
             ));
         }
     }

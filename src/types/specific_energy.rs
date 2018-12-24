@@ -71,14 +71,6 @@ impl Display for JpKgpK {
     }
 }
 
-impl Div<JpKgpK> for JpKgpK {
-    type Output = f64;
-
-    fn div(self, rhs: JpKgpK) -> f64 {
-        self.0 / rhs.0
-    }
-}
-
 impl Mul<Kelvin> for JpKgpK {
     type Output = JpKg;
 
