@@ -3,7 +3,7 @@ use crate::types::Quantity;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Div, Mul, Sub};
 
 /// Marker trait for elevation/height types.
 pub trait Length: Quantity + PartialEq + PartialOrd {}

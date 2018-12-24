@@ -1,6 +1,7 @@
 #![macro_use]
 //! New type wrappers for meteorlogical units.
 
+pub use self::lapse_rates::*;
 pub use self::length::*;
 pub use self::pressure_vertical_velocity::*;
 pub use self::pressures::*;
@@ -49,7 +50,7 @@ pub trait VectorQuantity: Copy + Debug + Display + Sized {
 use std::borrow::Borrow;
 use std::fmt::{Debug, Display};
 
-macro_rules! implOpsForQuantity {
+macro_rules! implAddSubOpsForQuantity {
     ($t:tt) => {
         impl<T> Add<T> for $t
         where
@@ -59,7 +60,7 @@ macro_rules! implOpsForQuantity {
             type Output = $t;
 
             #[inline]
-            fn add(self, rhs: T) -> $t {
+            fn add(self, rhs: T) -> Self::Output {
                 let rhs = $t::from(rhs);
                 Self::pack(self.unpack() + rhs.unpack())
             }
@@ -73,12 +74,43 @@ macro_rules! implOpsForQuantity {
             type Output = $t;
 
             #[inline]
-            fn sub(self, rhs: T) -> $t {
+            fn sub(self, rhs: T) -> Self::Output {
                 let rhs = $t::from(rhs);
                 Self::pack(self.unpack() - rhs.unpack())
             }
         }
+    };
+}
 
+macro_rules! implMulDivOpsForQuantity {
+    ($t:tt) => {
+        impl<T> Div<T> for $t
+        where
+            $t: From<T> + Quantity,
+            T: Quantity,
+        {
+            type Output = f64;
+
+            #[inline]
+            fn div(self, rhs: T) -> Self::Output {
+                let rhs = $t::from(rhs);
+                self.unpack() / rhs.unpack()
+            }
+        }
+
+        impl Mul<f64> for $t {
+            type Output = $t;
+
+            #[inline]
+            fn mul(self, rhs: f64) -> Self::Output {
+                Self::pack(self.unpack() * rhs)
+            }
+        }
+    };
+}
+
+macro_rules! implOrdEqOpsForQuantity {
+    ($t:tt) => {
         impl<T> PartialEq<T> for $t
         where
             $t: From<T> + Quantity,
@@ -102,22 +134,6 @@ macro_rules! implOpsForQuantity {
                 let other: &f64 = other.borrow();
                 let me: &f64 = self.borrow();
                 std::cmp::PartialOrd::partial_cmp(me, other)
-            }
-        }
-
-        #[cfg(feature = "use_optional")]
-        impl optional::Noned for $t
-        where
-            $t: Quantity,
-        {
-            #[inline]
-            fn is_none(&self) -> bool {
-                optional::Noned::is_none(Borrow::<f64>::borrow(self))
-            }
-
-            #[inline]
-            fn get_none() -> $t {
-                $t::pack(optional::Noned::get_none())
             }
         }
 
@@ -154,6 +170,35 @@ macro_rules! implOpsForQuantity {
                 }
             }
         }
+    };
+}
+
+macro_rules! implNonedForQuantity {
+    ($t:tt) => {
+        #[cfg(feature = "use_optional")]
+        impl optional::Noned for $t
+        where
+            $t: Quantity,
+        {
+            #[inline]
+            fn is_none(&self) -> bool {
+                optional::Noned::is_none(Borrow::<f64>::borrow(self))
+            }
+
+            #[inline]
+            fn get_none() -> $t {
+                $t::pack(optional::Noned::get_none())
+            }
+        }
+    };
+}
+
+macro_rules! implOpsForQuantity {
+    ($t:tt) => {
+        implNonedForQuantity!($t);
+        implAddSubOpsForQuantity!($t);
+        implMulDivOpsForQuantity!($t);
+        implOrdEqOpsForQuantity!($t);
     };
 }
 
@@ -227,6 +272,7 @@ macro_rules! implOpsForVectorQuantity {
     };
 }
 
+mod lapse_rates;
 mod length;
 mod pressure_vertical_velocity;
 mod pressures;

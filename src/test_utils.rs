@@ -3,17 +3,15 @@
 use crate::types::*;
 use std::ops::Sub;
 
-pub fn approx_equal<L, R, T>(left: L, right: R, tol: T) -> bool
+pub fn approx_equal<L, R>(left: L, right: R, tol: <L as Sub<R>>::Output) -> bool
 where
-    T: Quantity + From<L> + From<R> + Sub,
-    <T as Sub>::Output: Quantity,
+    L: Quantity + From<R> + Sub<R>,
+    R: Quantity,
+    <L as Sub<R>>::Output: Quantity + PartialOrd,
 {
     use std::f64;
-    let tol = tol.unpack();
-    let left = T::from(left);
-    let right = T::from(right);
-    assert!(tol > 0.0);
-    let passes = f64::abs((left - right).unpack()) <= tol;
+    assert!(tol.unpack() > 0.0);
+    let passes = <L as Sub<R>>::Output::pack(f64::abs((left - right).unpack())) <= tol;
 
     if !passes {
         println!("{} !~= {} within tolerance {}", left, right, tol);
@@ -24,11 +22,11 @@ where
 
 pub fn approx_lte<L, R, T>(a: L, b: R, tol: T) -> bool
 where
-    T: Quantity + From<L> + From<R> + Sub,
-    <T as Sub>::Output: PartialOrd<T> + Quantity,
+    L: Quantity + From<R> + Sub<R>,
+    R: Quantity,
+    T: Quantity,
+    <L as Sub<R>>::Output: PartialOrd<T> + Quantity,
 {
-    let a = T::from(a);
-    let b = T::from(b);
     let passes = (a - b) <= tol;
 
     if !passes {
