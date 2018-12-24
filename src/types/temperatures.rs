@@ -382,7 +382,7 @@ mod test {
         assert!(approx_equal(
             Fahrenheit::from(Celsius(-40.0)),
             Fahrenheit(-40.0),
-            FahrenheitDiff(TOL)
+            FahrenheitDiff(TOL),
         ));
         assert!((ABSOLUTE_ZERO + -CelsiusDiff(1.0)).into_option().is_none());
     }

@@ -647,7 +647,6 @@ mod test {
         for celsius in temperatures() {
             let kelvin = Kelvin::from(celsius);
             let theta = theta(HectoPascal(1000.0), celsius);
-
             assert!(approx_equal(kelvin, theta, CelsiusDiff(TOL)));
         }
     }
