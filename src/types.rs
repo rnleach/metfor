@@ -81,8 +81,8 @@ macro_rules! implAddSubOpsForQuantity {
         }
 
         impl<T> std::ops::AddAssign<T> for $t
-        where $t: 
-            From<T> + Quantity,
+        where
+            $t: From<T> + Quantity,
             T: Quantity,
         {
             fn add_assign(&mut self, rhs: T) {
@@ -92,9 +92,9 @@ macro_rules! implAddSubOpsForQuantity {
         }
 
         impl<T> std::ops::SubAssign<T> for $t
-        where 
+        where
             $t: From<T> + Quantity,
-            T: Quantity
+            T: Quantity,
         {
             fn sub_assign(&mut self, rhs: T) {
                 let rhs = $t::from(rhs);
@@ -130,7 +130,6 @@ macro_rules! implMulDivOpsForQuantity {
         }
 
         impl std::ops::MulAssign<f64> for $t {
-
             #[inline]
             fn mul_assign(&mut self, rhs: f64) {
                 *self = Self::pack(self.unpack() * rhs);
@@ -259,7 +258,6 @@ macro_rules! implOpsForVectorQuantity {
             $t: From<T> + VectorQuantity,
             T: VectorQuantity,
         {
-
             #[inline]
             fn add_assign(&mut self, rhs: T) {
                 let rhs = $t::from(rhs);
@@ -298,7 +296,6 @@ macro_rules! implOpsForVectorQuantity {
             $t: From<T> + VectorQuantity,
             T: VectorQuantity,
         {
-
             #[inline]
             fn sub_assign(&mut self, rhs: T) {
                 let rhs = $t::from(rhs);
