@@ -3,7 +3,7 @@ use crate::types::{temperatures::Kelvin, Quantity};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::Mul;
 
 /// Marker trait for specific energy types.
 pub trait SpecificEnergy: Quantity {}

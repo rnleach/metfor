@@ -3,7 +3,6 @@ use crate::types::Quantity;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::ops::{Add, Div, Mul, Sub};
 
 /// Marker trait for pressure vertical veclocity types.
 pub trait PVV: Quantity + PartialEq + PartialOrd {}

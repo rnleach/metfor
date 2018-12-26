@@ -4,7 +4,7 @@ use crate::types::Quantity;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use std::ops::{Add, Neg, Sub};
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}

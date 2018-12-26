@@ -3,7 +3,6 @@ use crate::types::{Feet, Km, Quantity};
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::ops::{Add, Div, Mul, Sub};
 
 /// Marker trait for temperature lapse rate types.
 pub trait TempLR: Quantity + PartialEq + PartialOrd {}
