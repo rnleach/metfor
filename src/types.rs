@@ -52,7 +52,7 @@ use std::fmt::{Debug, Display};
 
 macro_rules! implAddSubOpsForQuantity {
     ($t:tt) => {
-        impl<T> Add<T> for $t
+        impl<T> std::ops::Add<T> for $t
         where
             $t: From<T> + Quantity,
             T: Quantity,
@@ -66,7 +66,7 @@ macro_rules! implAddSubOpsForQuantity {
             }
         }
 
-        impl<T> Sub<T> for $t
+        impl<T> std::ops::Sub<T> for $t
         where
             $t: From<T> + Quantity,
             T: Quantity,
@@ -79,12 +79,34 @@ macro_rules! implAddSubOpsForQuantity {
                 Self::pack(self.unpack() - rhs.unpack())
             }
         }
+
+        impl<T> std::ops::AddAssign<T> for $t
+        where
+            $t: From<T> + Quantity,
+            T: Quantity,
+        {
+            fn add_assign(&mut self, rhs: T) {
+                let rhs = $t::from(rhs);
+                *self = Self::pack(self.unpack() + rhs.unpack());
+            }
+        }
+
+        impl<T> std::ops::SubAssign<T> for $t
+        where
+            $t: From<T> + Quantity,
+            T: Quantity,
+        {
+            fn sub_assign(&mut self, rhs: T) {
+                let rhs = $t::from(rhs);
+                *self = Self::pack(self.unpack() - rhs.unpack());
+            }
+        }
     };
 }
 
 macro_rules! implMulDivOpsForQuantity {
     ($t:tt) => {
-        impl<T> Div<T> for $t
+        impl<T> std::ops::Div<T> for $t
         where
             $t: From<T> + Quantity,
             T: Quantity,
@@ -98,7 +120,7 @@ macro_rules! implMulDivOpsForQuantity {
             }
         }
 
-        impl Mul<f64> for $t {
+        impl std::ops::Mul<f64> for $t {
             type Output = $t;
 
             #[inline]
@@ -106,12 +128,19 @@ macro_rules! implMulDivOpsForQuantity {
                 Self::pack(self.unpack() * rhs)
             }
         }
+
+        impl std::ops::MulAssign<f64> for $t {
+            #[inline]
+            fn mul_assign(&mut self, rhs: f64) {
+                *self = Self::pack(self.unpack() * rhs);
+            }
+        }
     };
 }
 
 macro_rules! implOrdEqOpsForQuantity {
     ($t:tt) => {
-        impl<T> PartialEq<T> for $t
+        impl<T> std::cmp::PartialEq<T> for $t
         where
             $t: From<T> + Quantity,
             T: Quantity,
@@ -123,7 +152,7 @@ macro_rules! implOrdEqOpsForQuantity {
             }
         }
 
-        impl<T> PartialOrd<T> for $t
+        impl<T> std::cmp::PartialOrd<T> for $t
         where
             $t: From<T> + Quantity,
             T: Quantity,
@@ -204,7 +233,7 @@ macro_rules! implOpsForQuantity {
 
 macro_rules! implOpsForVectorQuantity {
     ($t:tt) => {
-        impl<T> Add<T> for $t
+        impl<T> std::ops::Add<T> for $t
         where
             $t: From<T> + VectorQuantity,
             T: VectorQuantity,
@@ -224,7 +253,25 @@ macro_rules! implOpsForVectorQuantity {
             }
         }
 
-        impl<T> Sub<T> for $t
+        impl<T> std::ops::AddAssign<T> for $t
+        where
+            $t: From<T> + VectorQuantity,
+            T: VectorQuantity,
+        {
+            #[inline]
+            fn add_assign(&mut self, rhs: T) {
+                let rhs = $t::from(rhs);
+                let (x, y) = self.unpack_xy();
+                let (rhs_x, rhs_y) = rhs.unpack_xy();
+
+                let x_res = x + rhs_x;
+                let y_res = y + rhs_y;
+
+                *self = Self::pack_xy((x_res, y_res));
+            }
+        }
+
+        impl<T> std::ops::Sub<T> for $t
         where
             $t: From<T> + VectorQuantity,
             T: VectorQuantity,
@@ -244,7 +291,25 @@ macro_rules! implOpsForVectorQuantity {
             }
         }
 
-        impl<T> PartialEq<T> for $t
+        impl<T> std::ops::SubAssign<T> for $t
+        where
+            $t: From<T> + VectorQuantity,
+            T: VectorQuantity,
+        {
+            #[inline]
+            fn sub_assign(&mut self, rhs: T) {
+                let rhs = $t::from(rhs);
+                let (x, y) = self.unpack_xy();
+                let (rhs_x, rhs_y) = rhs.unpack_xy();
+
+                let x_res = x - rhs_x;
+                let y_res = y - rhs_y;
+
+                *self = Self::pack_xy((x_res, y_res));
+            }
+        }
+
+        impl<T> std::cmp::PartialEq<T> for $t
         where
             $t: From<T> + VectorQuantity,
             T: VectorQuantity,

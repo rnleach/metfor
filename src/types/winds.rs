@@ -1,7 +1,6 @@
 //! Wind units and vectors.
 use crate::types::VectorQuantity;
 use std::fmt::Display;
-use std::ops::{Add, Sub};
 
 /// Marker trait for Wind types.
 pub trait Wind: VectorQuantity {}
