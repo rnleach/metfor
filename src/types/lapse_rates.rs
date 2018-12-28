@@ -23,11 +23,11 @@ pub type KelvinPKm = CelsiusPKm;
 
 /// Hydrolapse in for mixing ratio in km<sup>-1</sup>
 #[derive(Clone, Copy, Debug)]
-pub struct HydrolapsePKm(f64);
+pub struct HydrolapsePKm(pub f64);
 
 /// Hydrolapse in for mixing ratio in g / kg/ km
 #[derive(Clone, Copy, Debug)]
-pub struct HydrolapseGPKgPKm(f64);
+pub struct HydrolapseGPKgPKm(pub f64);
 
 impl TempLR for FahrenheitPKft {}
 impl TempLR for CelsiusPKm {}
