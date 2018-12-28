@@ -7,6 +7,9 @@ use std::fmt::Display;
 /// Marker trait for temperature lapse rate types.
 pub trait TempLR: Quantity + PartialEq + PartialOrd {}
 
+/// Marker trait for hydrolapse.
+pub trait Hydrolapse: Quantity + PartialOrd + PartialEq {}
+
 /// Temperature lapse rate in Fahrenheit per thousand feet (kft).
 #[derive(Clone, Copy, Debug)]
 pub struct FahrenheitPKft(pub f64);
@@ -18,8 +21,18 @@ pub struct CelsiusPKm(pub f64);
 /// Temperature lapse rate in Kelvin per kilometer.
 pub type KelvinPKm = CelsiusPKm;
 
+/// Hydrolapse in for mixing ratio in km<sup>-1</sup>
+#[derive(Clone, Copy, Debug)]
+pub struct HydrolapsePKm(f64);
+
+/// Hydrolapse in for mixing ratio in g / kg/ km
+#[derive(Clone, Copy, Debug)]
+pub struct HydrolapseGPKgPKm(f64);
+
 impl TempLR for FahrenheitPKft {}
 impl TempLR for CelsiusPKm {}
+
+impl Hydrolapse for HydrolapsePKm {}
 
 macro_rules! implQuantity {
     ($t:tt) => {
@@ -59,6 +72,9 @@ macro_rules! implQuantity {
 implQuantity!(FahrenheitPKft);
 implQuantity!(CelsiusPKm);
 
+implQuantity!(HydrolapsePKm);
+implQuantity!(HydrolapseGPKgPKm);
+
 impl From<CelsiusPKm> for FahrenheitPKft {
     #[inline]
     fn from(c: CelsiusPKm) -> Self {
@@ -77,6 +93,20 @@ impl From<FahrenheitPKft> for CelsiusPKm {
     }
 }
 
+impl From<HydrolapsePKm> for HydrolapseGPKgPKm {
+    #[inline]
+    fn from(hl: HydrolapsePKm) -> Self {
+        HydrolapseGPKgPKm(1000.0 * hl.unpack())
+    }
+}
+
+impl From<HydrolapseGPKgPKm> for HydrolapsePKm {
+    #[inline]
+    fn from(hl: HydrolapseGPKgPKm) -> Self {
+        HydrolapsePKm(hl.unpack() / 1000.0)
+    }
+}
+
 impl Display for CelsiusPKm {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{00B0}C/km", self.0)
@@ -86,5 +116,17 @@ impl Display for CelsiusPKm {
 impl Display for FahrenheitPKft {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{00B0}F/kft", self.0)
+    }
+}
+
+impl Display for HydrolapsePKm {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "{:.4}km\u{207B}\u{2081}", self.0)
+    }
+}
+
+impl Display for HydrolapseGPKgPKm {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+        write!(f, "{:.1}g kg\u{207B}\u{2081} km\u{207B}\u{2081}", self.0)
     }
 }
