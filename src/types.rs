@@ -200,6 +200,26 @@ macro_rules! implOrdEqOpsForQuantity {
                 }
             }
         }
+
+        impl $t {
+            /// Find the maximum for two values
+            pub fn max(self, other: $t) -> Self {
+                if self > other {
+                    self
+                } else {
+                    other
+                }
+            }
+
+            /// Find the minimum for two values
+            pub fn min(self, other: $t) -> Self {
+                if self < other {
+                    self
+                } else {
+                    other
+                }
+            }
+        }
     };
 }
 
