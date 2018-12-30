@@ -1,5 +1,8 @@
 //! Wind units and vectors.
-use crate::types::{VectorQuantity, Quantity, speed::{Knots, MetersPSec}};
+use crate::types::{
+    speed::{Knots, MetersPSec},
+    Quantity, VectorQuantity,
+};
 use std::fmt::Display;
 
 /// Marker trait for Wind types.
