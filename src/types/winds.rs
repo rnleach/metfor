@@ -1,5 +1,5 @@
 //! Wind units and vectors.
-use crate::types::VectorQuantity;
+use crate::types::{VectorQuantity, Quantity, speed::{Knots, MetersPSec}};
 use std::fmt::Display;
 
 /// Marker trait for Wind types.
@@ -14,6 +14,14 @@ pub trait Wind: VectorQuantity {}
 pub struct WindSpdDir {
     pub speed_kt: f64,
     pub direction: f64,
+}
+
+impl WindSpdDir {
+    /// Get the wind speed.
+    #[inline]
+    pub fn speed(&self) -> Knots {
+        Knots::pack(self.speed_kt)
+    }
 }
 
 impl VectorQuantity for WindSpdDir {
@@ -89,6 +97,14 @@ implOpsForVectorQuantity!(WindSpdDir);
 pub struct WindUV {
     pub u: f64,
     pub v: f64,
+}
+
+impl WindUV {
+    /// Get the wind speed.
+    #[inline]
+    pub fn speed(&self) -> MetersPSec {
+        MetersPSec::pack((self.u.hypot(self.v)).sqrt())
+    }
 }
 
 impl VectorQuantity for WindUV {
