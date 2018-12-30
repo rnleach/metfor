@@ -39,9 +39,8 @@ pub struct CelsiusDiff(pub f64);
 /// Temperature difference in Kelvin units.
 pub type KelvinDiff = CelsiusDiff;
 
-impl TempDiff for Fahrenheit {}
-impl TempDiff for Celsius {}
-impl TempDiff for Kelvin {}
+impl TempDiff for FahrenheitDiff {}
+impl TempDiff for CelsiusDiff {}
 
 macro_rules! implQuantityForT {
     ($t:tt) => {
