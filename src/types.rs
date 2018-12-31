@@ -219,6 +219,17 @@ macro_rules! implOrdEqOpsForQuantity {
                     other
                 }
             }
+
+            /// Test whether these two values are close
+            pub fn approx_eq<RHS, TOL>(self, other: RHS, tol: TOL) -> bool 
+            where
+                Self: From<RHS> + From<TOL>,
+            {
+                let lhs = self.unpack();
+                let rhs = Self::from(other).unpack();
+                let tol = Self::from(tol).unpack();
+                (lhs - rhs).abs() <= tol
+            }
         }
     };
 }
