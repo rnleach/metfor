@@ -43,20 +43,14 @@ macro_rules! implQuantity {
 
             #[inline]
             fn unwrap(self) -> f64 {
-                if self.0 < 0.0 {
-                    panic!("negative speed");
-                }
-
+                // allow negative speeds for use as an element in vectors
                 self.0
             }
 
             #[inline]
             fn into_option(self) -> Option<f64> {
-                if self.0 < 0.0 {
-                    None
-                } else {
-                    Some(self.0)
-                }
+                // allow negative speeds for use as an element in vectors
+                Some(self.0)
             }
         }
 
@@ -106,7 +100,7 @@ impl From<MilesPHour> for KmPHour {
 impl From<MetersPSec> for Knots {
     #[inline]
     fn from(s: MetersPSec) -> Self {
-        Knots(s.0 * 1.94384)
+        Knots(s.0 / 0.51444444)
     }
 }
 
@@ -168,7 +162,7 @@ impl From<KmPHour> for MetersPSec {
 impl From<Knots> for MetersPSec {
     #[inline]
     fn from(s: Knots) -> Self {
-        MetersPSec(s.0 * 0.514444)
+        MetersPSec(s.0 * 0.51444444)
     }
 }
 
