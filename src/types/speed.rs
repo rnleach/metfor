@@ -76,7 +76,7 @@ implQuantity!(KmPHour);
 impl From<MetersPSec> for KmPHour {
     #[inline]
     fn from(s: MetersPSec) -> Self {
-        KmPHour(s.0 / 1000.0 * 3600.0)
+        KmPHour(s.0 / 1_000.0 * 3_600.0)
     }
 }
 
@@ -90,7 +90,7 @@ impl From<Knots> for KmPHour {
 impl From<MilesPHour> for KmPHour {
     #[inline]
     fn from(s: MilesPHour) -> Self {
-        KmPHour(s.0 * 1.60934)
+        KmPHour(s.0 * 1.609_34)
     }
 }
 
@@ -100,21 +100,21 @@ impl From<MilesPHour> for KmPHour {
 impl From<MetersPSec> for Knots {
     #[inline]
     fn from(s: MetersPSec) -> Self {
-        Knots(s.0 / 0.51444444)
+        Knots(s.0 / 0.514_444_44)
     }
 }
 
 impl From<KmPHour> for Knots {
     #[inline]
     fn from(s: KmPHour) -> Self {
-        Knots(s.0 * 0.539957)
+        Knots(s.0 * 0.5399_57)
     }
 }
 
 impl From<MilesPHour> for Knots {
     #[inline]
     fn from(s: MilesPHour) -> Self {
-        Knots(s.0 * 0.868976)
+        Knots(s.0 * 0.868_976)
     }
 }
 
@@ -124,21 +124,21 @@ impl From<MilesPHour> for Knots {
 impl From<MetersPSec> for MilesPHour {
     #[inline]
     fn from(s: MetersPSec) -> Self {
-        MilesPHour(s.0 * 2.23694)
+        MilesPHour(s.0 * 2.236_94)
     }
 }
 
 impl From<KmPHour> for MilesPHour {
     #[inline]
     fn from(s: KmPHour) -> Self {
-        MilesPHour(s.0 * 0.621371)
+        MilesPHour(s.0 * 0.621_371)
     }
 }
 
 impl From<Knots> for MilesPHour {
     #[inline]
     fn from(s: Knots) -> Self {
-        MilesPHour(s.0 * 1.15078)
+        MilesPHour(s.0 * 1.150_78)
     }
 }
 
@@ -148,21 +148,21 @@ impl From<Knots> for MilesPHour {
 impl From<MilesPHour> for MetersPSec {
     #[inline]
     fn from(s: MilesPHour) -> Self {
-        MetersPSec(s.0 * 0.44704)
+        MetersPSec(s.0 * 0.447_04)
     }
 }
 
 impl From<KmPHour> for MetersPSec {
     #[inline]
     fn from(s: KmPHour) -> Self {
-        MetersPSec(s.0 * 0.277778)
+        MetersPSec(s.0 * 0.277_778)
     }
 }
 
 impl From<Knots> for MetersPSec {
     #[inline]
     fn from(s: Knots) -> Self {
-        MetersPSec(s.0 * 0.51444444)
+        MetersPSec(s.0 * 0.514_444_44)
     }
 }
 
