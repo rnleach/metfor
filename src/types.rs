@@ -118,6 +118,14 @@ macro_rules! implAddSubOpsForQuantity {
             }
         }
 
+        impl std::ops::Neg for $t {
+            type Output = $t;
+
+            fn neg(self) -> Self::Output {
+                Self::Output::pack(-self.unpack())
+            }
+        }
+
         impl<T> std::ops::AddAssign<T> for $t
         where
             $t: From<T> + Quantity,

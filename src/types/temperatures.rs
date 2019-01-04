@@ -4,7 +4,7 @@ use crate::types::Quantity;
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Sub};
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
@@ -119,14 +119,6 @@ macro_rules! implQuantityForDiffT {
             #[inline]
             fn borrow(&self) -> &f64 {
                 &self.0
-            }
-        }
-
-        impl Neg for $t {
-            type Output = $t;
-
-            fn neg(self) -> Self::Output {
-                Self::Output::pack(-self.unpack())
             }
         }
 
