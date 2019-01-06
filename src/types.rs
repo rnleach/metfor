@@ -12,7 +12,7 @@ pub use self::unitless::*;
 pub use self::winds::*;
 
 /// A quantity is a common super trait for types that represent units of measurement.
-pub trait Quantity: Copy + Debug + Display + Sized + Borrow<f64> {
+pub trait Quantity: Copy + Debug + Display + Sized {
     /// Create a new instance of self by wrapping a value
     fn pack(_: f64) -> Self;
 
@@ -85,7 +85,6 @@ where
 //
 // Not exported
 //
-use std::borrow::Borrow;
 use std::fmt::{Debug, Display};
 
 macro_rules! implAddSubOpsForQuantity {
@@ -213,8 +212,8 @@ macro_rules! implOrdEqOpsForQuantity {
             #[inline]
             fn partial_cmp(&self, other: &T) -> Option<Ordering> {
                 let other = $t::from(*other);
-                let other: &f64 = other.borrow();
-                let me: &f64 = self.borrow();
+                let other: &f64 = &other.unpack();
+                let me: &f64 = &self.unpack();
                 std::cmp::PartialOrd::partial_cmp(me, other)
             }
         }
@@ -284,7 +283,7 @@ macro_rules! implNonedForQuantity {
         {
             #[inline]
             fn is_none(&self) -> bool {
-                optional::Noned::is_none(Borrow::<f64>::borrow(self))
+                optional::Noned::is_none(&self.unpack())
             }
 
             #[inline]

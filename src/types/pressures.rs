@@ -1,6 +1,5 @@
 //! Pressure units
 use crate::types::Quantity;
-use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
 
@@ -47,13 +46,6 @@ macro_rules! implQuantity {
                 } else {
                     Some(self.0)
                 }
-            }
-        }
-
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
             }
         }
 

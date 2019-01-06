@@ -1,6 +1,5 @@
 //! Specific energy units (energy per unit mass)
 use crate::types::{temperatures::Kelvin, Quantity};
-use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::ops::Mul;
@@ -42,13 +41,6 @@ macro_rules! implQuantity {
             #[inline]
             fn into_option(self) -> Option<f64> {
                 Some(self.0)
-            }
-        }
-
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
             }
         }
 

@@ -1,7 +1,6 @@
 //! Temperature units
 use crate::constants::*;
 use crate::types::Quantity;
-use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
@@ -74,13 +73,6 @@ macro_rules! implQuantityForT {
             }
         }
 
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
-            }
-        }
-
         implNonedForQuantity!($t);
         implMulDivOpsForQuantity!($t);
         implOrdEqOpsForQuantity!($t);
@@ -112,13 +104,6 @@ macro_rules! implQuantityForDiffT {
             #[inline]
             fn into_option(self) -> Option<f64> {
                 Some(self.0)
-            }
-        }
-
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
             }
         }
 
