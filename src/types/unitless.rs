@@ -25,15 +25,15 @@ impl Quantity for u8 {
     }
 
     fn unpack(self) -> f64 {
-        self as f64
+        f64::from(self)
     }
 
     fn unwrap(self) -> f64 {
-        self as f64
+        f64::from(self)
     }
 
     fn into_option(self) -> Option<f64> {
-        Some(self as f64)
+        Some(f64::from(self))
     }
 }
 
