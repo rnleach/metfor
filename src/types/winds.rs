@@ -90,7 +90,7 @@ impl<S> Display for WindSpdDir<S>
 where
     S: Quantity,
 {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:03.0} at {}", self.direction, self.speed)
     }
 }
@@ -161,7 +161,7 @@ where
 }
 
 impl<S: Display> Display for WindUV<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "({}, {})", self.u, self.v)
     }
 }

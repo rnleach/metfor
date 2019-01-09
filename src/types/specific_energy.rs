@@ -52,13 +52,13 @@ implQuantity!(JpKg);
 implQuantity!(JpKgpK);
 
 impl Display for JpKg {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{} J/kg", self.0)
     }
 }
 
 impl Display for JpKgpK {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{} J/kg/K", self.0)
     }
 }

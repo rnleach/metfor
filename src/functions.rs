@@ -597,7 +597,7 @@ where
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
 /// when finding wet bulb temperature.
 // FIXME: Update to use Brent's method.
-fn find_root(f: &Fn(f64) -> Option<f64>, mut low_val: f64, mut high_val: f64) -> Option<f64> {
+fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut low_val: f64, mut high_val: f64) -> Option<f64> {
     use std::f64;
     const MAX_IT: usize = 50;
     const EPS: f64 = 1.0e-10;

@@ -248,31 +248,31 @@ impl From<CelsiusDiff> for FahrenheitDiff {
 }
 
 impl Display for Celsius {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{00B0}C", self.0)
     }
 }
 
 impl Display for Fahrenheit {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{00B0}F", self.0)
     }
 }
 
 impl Display for Kelvin {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{00B0}K", self.0)
     }
 }
 
 impl Display for CelsiusDiff {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{0394}\u{00B0}(C or K)", self.0)
     }
 }
 
 impl Display for FahrenheitDiff {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}\u{0394}\u{00B0}F", self.0)
     }
 }

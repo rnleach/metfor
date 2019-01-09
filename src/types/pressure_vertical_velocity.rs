@@ -63,13 +63,13 @@ impl From<PaPS> for MicroBarPS {
 }
 
 impl Display for PaPS {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.1}Pa/s", self.0)
     }
 }
 
 impl Display for MicroBarPS {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "{:.0}\u{00B5}b/s", self.0)
     }
 }
