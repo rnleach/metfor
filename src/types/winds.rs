@@ -14,6 +14,8 @@ where
 --------------------------------------------------------------------------------------------------*/
 /// Wind direction and speed in knots.
 #[allow(missing_docs)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 #[derive(Clone, Copy, Debug)]
 pub struct WindSpdDir<S>
 where
@@ -104,6 +106,8 @@ implOpsForVectorQuantity!(WindSpdDir);
 /// Wind in U and V components in m/s.
 #[allow(missing_docs)]
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct WindUV<S> {
     pub u: S,
     pub v: S,

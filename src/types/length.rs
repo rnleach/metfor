@@ -8,30 +8,44 @@ pub trait Length: Quantity + PartialEq + PartialOrd {}
 
 /// Length in meters, usually used for geopotential height and elevation.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Meters(pub f64);
 
 /// Length in decameters, usually used for geopotential height.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Decameters(pub f64);
 
 /// Length in feet, usually used for geopotential height and elevation.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Feet(pub f64);
 
 /// Length in kilometers, usually used for geopotential height above ground level.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Km(pub f64);
 
 /// Length in inches, usually used for precipitation depth or precipitable water.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Inches(pub f64);
 
 /// Length in millimeters, usually used for precipitation depth or precipitable water.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Mm(pub f64);
 
 /// Length in centimeters, usually used for precipitation depth or precipitable water.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Cm(pub f64);
 
 impl Length for Meters {}

@@ -8,10 +8,14 @@ pub trait Pressure: Quantity {}
 
 /// Pressure in hPa units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct HectoPascal(pub f64);
 
 /// Pressure in mb units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Millibar(pub f64);
 
 impl Pressure for HectoPascal {}

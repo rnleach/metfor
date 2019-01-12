@@ -12,11 +12,15 @@ pub trait SpecificEnergyPerKelvin: Quantity {}
 
 /// Specific energy in J kg<sup>-1</sup> units. Used for CAPE, CIN, latent heat, etc.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct JpKg(pub f64);
 
 /// Specific energy per Kelvin in J K<sup>-1</sup> kg<sup>-1</sup>. Used for gas constants and
 /// specific heat valus.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct JpKgpK(pub f64);
 
 impl SpecificEnergy for JpKg {}

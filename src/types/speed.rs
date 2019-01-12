@@ -8,18 +8,26 @@ pub trait Speed: Quantity + PartialEq + PartialOrd {}
 
 /// Speed in meters per second.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct MetersPSec(pub f64);
 
 /// Speed in knots.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Knots(pub f64);
 
 /// Speed in miles per hour
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct MilesPHour(pub f64);
 
 /// Speed in Kilometers per hour
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct KmPHour(pub f64);
 
 impl Speed for MetersPSec {}

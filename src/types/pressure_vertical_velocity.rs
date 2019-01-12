@@ -8,10 +8,14 @@ pub trait PVV: Quantity + PartialEq + PartialOrd {}
 
 /// Pressure vertical velocity in Pa/s
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct PaPS(pub f64);
 
 /// Pressure vertical velocity in microbar/s
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct MicroBarPS(pub f64);
 
 impl PVV for PaPS {}

@@ -13,14 +13,20 @@ pub trait TempDiff: Quantity + PartialOrd + PartialEq {}
 
 /// Temperature in Fahrenheit units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Fahrenheit(pub f64);
 
 /// Temperature in Celsius units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Celsius(pub f64);
 
 /// Temperature in Kelvin units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Kelvin(pub f64);
 
 impl Temperature for Fahrenheit {}
@@ -29,10 +35,14 @@ impl Temperature for Kelvin {}
 
 /// Temperature difference in Fahrenheit units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct FahrenheitDiff(pub f64);
 
 /// Temperature difference in Celsius units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct CelsiusDiff(pub f64);
 
 /// Temperature difference in Kelvin units.
