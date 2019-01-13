@@ -1,6 +1,5 @@
 //! Wind units and vectors.
 use crate::types::{speed::Speed, Quantity, VectorQuantity};
-use std::fmt::Display;
 
 /// Marker trait for Wind types.
 pub trait Wind<S>: VectorQuantity<S>
@@ -88,15 +87,6 @@ where
     }
 }
 
-impl<S> Display for WindSpdDir<S>
-where
-    S: Quantity,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:03.0} at {}", self.direction, self.speed)
-    }
-}
-
 impl<S> Wind<S> for WindSpdDir<S> where S: Speed {}
 implOpsForVectorQuantity!(WindSpdDir);
 
@@ -161,12 +151,6 @@ where
     #[inline]
     fn get_none() -> Self {
         Self::pack_xy((optional::Noned::get_none(), optional::Noned::get_none()))
-    }
-}
-
-impl<S: Display> Display for WindUV<S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "({}, {})", self.u, self.v)
     }
 }
 

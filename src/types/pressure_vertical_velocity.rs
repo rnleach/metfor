@@ -1,7 +1,6 @@
 //! Pressure vertical velocity.
 use crate::types::Quantity;
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for pressure vertical veclocity types.
 pub trait PVV: Quantity + PartialEq + PartialOrd {}
@@ -63,17 +62,5 @@ impl From<PaPS> for MicroBarPS {
     #[inline]
     fn from(p: PaPS) -> Self {
         MicroBarPS(p.0 * 10.0)
-    }
-}
-
-impl Display for PaPS {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}Pa/s", self.0)
-    }
-}
-
-impl Display for MicroBarPS {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}\u{00B5}b/s", self.0)
     }
 }

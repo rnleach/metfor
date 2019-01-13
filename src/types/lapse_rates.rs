@@ -1,7 +1,6 @@
 //! Lapse rate units
 use crate::types::{Feet, Km, Quantity};
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for temperature lapse rate types.
 pub trait TempLR: Quantity + PartialEq + PartialOrd {}
@@ -104,29 +103,5 @@ impl From<HydrolapseGPKgPKm> for HydrolapsePKm {
     #[inline]
     fn from(hl: HydrolapseGPKgPKm) -> Self {
         HydrolapsePKm(hl.unpack() / 1000.0)
-    }
-}
-
-impl Display for CelsiusPKm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}C/km", self.0)
-    }
-}
-
-impl Display for FahrenheitPKft {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}F/kft", self.0)
-    }
-}
-
-impl Display for HydrolapsePKm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.4}km\u{207B}\u{2081}", self.0)
-    }
-}
-
-impl Display for HydrolapseGPKgPKm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}g kg\u{207B}\u{2081} km\u{207B}\u{2081}", self.0)
     }
 }

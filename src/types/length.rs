@@ -1,7 +1,6 @@
 //! Length units for elevation and geopotential height.
 use crate::types::Quantity;
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for elevation/height types.
 pub trait Length: Quantity + PartialEq + PartialOrd {}
@@ -405,51 +404,5 @@ impl From<Mm> for Inches {
     #[inline]
     fn from(h: Mm) -> Self {
         Inches::from(Feet::from(h))
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-//                                     Display implementations
-//--------------------------------------------------------------------------------------------------
-
-impl Display for Meters {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}m", self.0)
-    }
-}
-
-impl Display for Decameters {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}dm", self.0)
-    }
-}
-
-impl Display for Feet {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}ft", self.0)
-    }
-}
-
-impl Display for Km {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.2}km", self.0)
-    }
-}
-
-impl Display for Inches {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.2}in", self.0)
-    }
-}
-
-impl Display for Cm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}cm", self.0)
-    }
-}
-
-impl Display for Mm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}mm", self.0)
     }
 }

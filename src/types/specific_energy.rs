@@ -1,7 +1,6 @@
 //! Specific energy units (energy per unit mass)
 use crate::types::{temperatures::Kelvin, Quantity};
 use std::cmp::Ordering;
-use std::fmt::Display;
 use std::ops::Mul;
 
 /// Marker trait for specific energy types.
@@ -54,18 +53,6 @@ macro_rules! implQuantity {
 
 implQuantity!(JpKg);
 implQuantity!(JpKgpK);
-
-impl Display for JpKg {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} J/kg", self.0)
-    }
-}
-
-impl Display for JpKgpK {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} J/kg/K", self.0)
-    }
-}
 
 impl Mul<Kelvin> for JpKgpK {
     type Output = JpKg;

@@ -12,7 +12,7 @@ pub use self::unitless::*;
 pub use self::winds::*;
 
 /// A quantity is a common super trait for types that represent units of measurement.
-pub trait Quantity: Copy + Debug + Display + Sized {
+pub trait Quantity: Copy + Debug + Sized {
     /// Create a new instance of self by wrapping a value
     fn pack(_: f64) -> Self;
 
@@ -43,7 +43,7 @@ pub trait Quantity: Copy + Debug + Display + Sized {
 }
 
 /// A version of `Quantity` for vectors.
-pub trait VectorQuantity<S>: Copy + Debug + Display + Sized
+pub trait VectorQuantity<S>: Copy + Debug + Sized
 where
     S: Quantity,
 {
@@ -85,7 +85,7 @@ where
 //
 // Not exported
 //
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 macro_rules! implAddSubOpsForQuantity {
     ($t:tt) => {

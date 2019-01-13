@@ -1,7 +1,6 @@
 //! Pressure units
 use crate::types::Quantity;
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for Pressure types.
 pub trait Pressure: Quantity {}
@@ -71,17 +70,5 @@ impl From<HectoPascal> for Millibar {
     #[inline]
     fn from(hpa: HectoPascal) -> Self {
         Millibar(hpa.0)
-    }
-}
-
-impl Display for HectoPascal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} hPa", self.0)
-    }
-}
-
-impl Display for Millibar {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} mb", self.0)
     }
 }

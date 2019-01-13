@@ -2,7 +2,6 @@
 use crate::constants::*;
 use crate::types::Quantity;
 use std::cmp::Ordering;
-use std::fmt::Display;
 use std::ops::{Add, Sub};
 
 /// Marker trait for temperature types.
@@ -254,36 +253,6 @@ impl From<CelsiusDiff> for FahrenheitDiff {
     #[inline]
     fn from(c: CelsiusDiff) -> Self {
         FahrenheitDiff(c.0 * 1.8)
-    }
-}
-
-impl Display for Celsius {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}C", self.0)
-    }
-}
-
-impl Display for Fahrenheit {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}F", self.0)
-    }
-}
-
-impl Display for Kelvin {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}K", self.0)
-    }
-}
-
-impl Display for CelsiusDiff {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{0394}\u{00B0}(C or K)", self.0)
-    }
-}
-
-impl Display for FahrenheitDiff {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{0394}\u{00B0}F", self.0)
     }
 }
 
