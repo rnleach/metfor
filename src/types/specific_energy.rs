@@ -1,8 +1,6 @@
 //! Specific energy units (energy per unit mass)
 use crate::types::{temperatures::Kelvin, Quantity};
-use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt::Display;
 use std::ops::Mul;
 
 /// Marker trait for specific energy types.
@@ -13,11 +11,15 @@ pub trait SpecificEnergyPerKelvin: Quantity {}
 
 /// Specific energy in J kg<sup>-1</sup> units. Used for CAPE, CIN, latent heat, etc.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct JpKg(pub f64);
 
 /// Specific energy per Kelvin in J K<sup>-1</sup> kg<sup>-1</sup>. Used for gas constants and
 /// specific heat valus.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct JpKgpK(pub f64);
 
 impl SpecificEnergy for JpKg {}
@@ -45,31 +47,12 @@ macro_rules! implQuantity {
             }
         }
 
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
-            }
-        }
-
         implOpsForQuantity!($t);
     };
 }
 
 implQuantity!(JpKg);
 implQuantity!(JpKgpK);
-
-impl Display for JpKg {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} J/kg", self.0)
-    }
-}
-
-impl Display for JpKgpK {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} J/kg/K", self.0)
-    }
-}
 
 impl Mul<Kelvin> for JpKgpK {
     type Output = JpKg;

@@ -1,18 +1,20 @@
 //! Pressure vertical velocity.
 use crate::types::Quantity;
-use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for pressure vertical veclocity types.
 pub trait PVV: Quantity + PartialEq + PartialOrd {}
 
 /// Pressure vertical velocity in Pa/s
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct PaPS(pub f64);
 
 /// Pressure vertical velocity in microbar/s
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct MicroBarPS(pub f64);
 
 impl PVV for PaPS {}
@@ -42,13 +44,6 @@ macro_rules! implQuantity {
             }
         }
 
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
-            }
-        }
-
         implOpsForQuantity!($t);
     };
 }
@@ -67,17 +62,5 @@ impl From<PaPS> for MicroBarPS {
     #[inline]
     fn from(p: PaPS) -> Self {
         MicroBarPS(p.0 * 10.0)
-    }
-}
-
-impl Display for PaPS {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}Pa/s", self.0)
-    }
-}
-
-impl Display for MicroBarPS {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}\u{00B5}b/s", self.0)
     }
 }

@@ -6,12 +6,13 @@ pub use self::length::*;
 pub use self::pressure_vertical_velocity::*;
 pub use self::pressures::*;
 pub use self::specific_energy::*;
+pub use self::speed::*;
 pub use self::temperatures::*;
 pub use self::unitless::*;
 pub use self::winds::*;
 
 /// A quantity is a common super trait for types that represent units of measurement.
-pub trait Quantity: Copy + Debug + Display + Sized + Borrow<f64> {
+pub trait Quantity: Copy + Debug + Sized {
     /// Create a new instance of self by wrapping a value
     fn pack(_: f64) -> Self;
 
@@ -23,32 +24,68 @@ pub trait Quantity: Copy + Debug + Display + Sized + Borrow<f64> {
 
     /// Convert into an option that is `None` if the content is invalid.
     fn into_option(self) -> Option<f64>;
+
+    /// Test whether these two values are close
+    fn approx_eq<RHS, TOL>(self, other: RHS, tol: TOL) -> bool
+    where
+        Self: From<RHS> + From<TOL> + Quantity,
+    {
+        let lhs = self.unpack();
+        let rhs = Self::from(other).unpack();
+        let tol = Self::from(tol).unpack();
+        (lhs - rhs).abs() <= tol
+    }
+
+    /// Test whether these two values are close
+    fn abs(self) -> Self {
+        Self::pack(self.unpack().abs())
+    }
 }
 
 /// A version of `Quantity` for vectors.
-pub trait VectorQuantity: Copy + Debug + Display + Sized {
+pub trait VectorQuantity<S>: Copy + Debug + Sized
+where
+    S: Quantity,
+{
     /// Create a new instance of self by wrapping some values. This must be x-y coordinates from the
     /// standard cartesian coordinate system.
-    fn pack_xy(_: (f64, f64)) -> Self;
+    fn pack_xy(_: (S, S)) -> Self;
 
     /// Unpack a wrapped value without any error checking. The returned values represent the vector
     /// in a standard x-y cartesian coordinate system.
-    fn unpack_xy(self) -> (f64, f64);
+    fn unpack_xy(self) -> (S, S);
 
     /// Unwrap the values from the new type and check validity, panic if contents are invalid. The
     /// returned values represent the vector in a standard x-y cartesian coordinate system.
-    fn unwrap_xy(self) -> (f64, f64);
+    fn unwrap_xy(self) -> (S, S);
 
     /// Convert into an option that is `None` if the content is invalid. The returned values
     /// represent the vector in a standard x-y cartesian coordinate system.
-    fn into_option(self) -> Option<(f64, f64)>;
+    fn into_option(self) -> Option<(S, S)>;
+
+    /// Get the magnitude of the vector.
+    fn abs(&self) -> S;
+
+    /// Test whether these two vectors are close by looking at the magnitude of their difference.
+    fn approx_eq<RHS, T, TOL>(self, other: RHS, tol: TOL) -> bool
+    where
+        Self: From<RHS> + std::ops::Sub<Self, Output = Self>,
+        S: From<TOL> + From<T> + PartialOrd,
+        RHS: VectorQuantity<T>,
+        T: Quantity,
+    {
+        let diff = VectorQuantity::abs(&(self - Self::from(other)));
+        let tol = S::from(tol);
+
+        debug_assert!(tol.unpack() > 0.0, "Tolerance must be greather than zero!");
+        diff <= tol
+    }
 }
 
 //
 // Not exported
 //
-use std::borrow::Borrow;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 macro_rules! implAddSubOpsForQuantity {
     ($t:tt) => {
@@ -77,6 +114,14 @@ macro_rules! implAddSubOpsForQuantity {
             fn sub(self, rhs: T) -> Self::Output {
                 let rhs = $t::from(rhs);
                 Self::pack(self.unpack() - rhs.unpack())
+            }
+        }
+
+        impl std::ops::Neg for $t {
+            type Output = $t;
+
+            fn neg(self) -> Self::Output {
+                Self::Output::pack(-self.unpack())
             }
         }
 
@@ -120,6 +165,13 @@ macro_rules! implMulDivOpsForQuantity {
             }
         }
 
+        impl std::ops::DivAssign<f64> for $t {
+            #[inline]
+            fn div_assign(&mut self, rhs: f64) {
+                *self = Self::pack(self.unpack() / rhs);
+            }
+        }
+
         impl std::ops::Mul<f64> for $t {
             type Output = $t;
 
@@ -160,8 +212,8 @@ macro_rules! implOrdEqOpsForQuantity {
             #[inline]
             fn partial_cmp(&self, other: &T) -> Option<Ordering> {
                 let other = $t::from(*other);
-                let other: &f64 = other.borrow();
-                let me: &f64 = self.borrow();
+                let other: &f64 = &other.unpack();
+                let me: &f64 = &self.unpack();
                 std::cmp::PartialOrd::partial_cmp(me, other)
             }
         }
@@ -199,6 +251,26 @@ macro_rules! implOrdEqOpsForQuantity {
                 }
             }
         }
+
+        impl $t {
+            /// Find the maximum for two values
+            pub fn max(self, other: $t) -> Self {
+                if self > other {
+                    self
+                } else {
+                    other
+                }
+            }
+
+            /// Find the minimum for two values
+            pub fn min(self, other: $t) -> Self {
+                if self < other {
+                    self
+                } else {
+                    other
+                }
+            }
+        }
     };
 }
 
@@ -211,7 +283,7 @@ macro_rules! implNonedForQuantity {
         {
             #[inline]
             fn is_none(&self) -> bool {
-                optional::Noned::is_none(Borrow::<f64>::borrow(self))
+                optional::Noned::is_none(&self.unpack())
             }
 
             #[inline]
@@ -232,16 +304,16 @@ macro_rules! implOpsForQuantity {
 }
 
 macro_rules! implOpsForVectorQuantity {
-    ($t:tt) => {
-        impl<T> std::ops::Add<T> for $t
+    ($t:ident) => {
+        impl<T, S> std::ops::Add<T> for $t<S>
         where
-            $t: From<T> + VectorQuantity,
-            T: VectorQuantity,
+            $t<S>: From<T> + VectorQuantity<S>,
+            S: Quantity + std::ops::Add<S, Output = S>,
         {
-            type Output = $t;
+            type Output = $t<S>;
 
             #[inline]
-            fn add(self, rhs: T) -> $t {
+            fn add(self, rhs: T) -> $t<S> {
                 let rhs = $t::from(rhs);
                 let (x, y) = self.unpack_xy();
                 let (rhs_x, rhs_y) = rhs.unpack_xy();
@@ -253,10 +325,10 @@ macro_rules! implOpsForVectorQuantity {
             }
         }
 
-        impl<T> std::ops::AddAssign<T> for $t
+        impl<T, S> std::ops::AddAssign<T> for $t<S>
         where
-            $t: From<T> + VectorQuantity,
-            T: VectorQuantity,
+            $t<S>: From<T> + VectorQuantity<S>,
+            S: Quantity + std::ops::Add<S, Output = S>,
         {
             #[inline]
             fn add_assign(&mut self, rhs: T) {
@@ -271,15 +343,15 @@ macro_rules! implOpsForVectorQuantity {
             }
         }
 
-        impl<T> std::ops::Sub<T> for $t
+        impl<T, S> std::ops::Sub<T> for $t<S>
         where
-            $t: From<T> + VectorQuantity,
-            T: VectorQuantity,
+            $t<S>: From<T> + VectorQuantity<S>,
+            S: Quantity + std::ops::Sub<S, Output = S>,
         {
-            type Output = $t;
+            type Output = $t<S>;
 
             #[inline]
-            fn sub(self, rhs: T) -> $t {
+            fn sub(self, rhs: T) -> $t<S> {
                 let rhs = $t::from(rhs);
                 let (x, y) = self.unpack_xy();
                 let (rhs_x, rhs_y) = rhs.unpack_xy();
@@ -291,10 +363,10 @@ macro_rules! implOpsForVectorQuantity {
             }
         }
 
-        impl<T> std::ops::SubAssign<T> for $t
+        impl<T, S> std::ops::SubAssign<T> for $t<S>
         where
-            $t: From<T> + VectorQuantity,
-            T: VectorQuantity,
+            $t<S>: From<T> + VectorQuantity<S>,
+            S: Quantity + std::ops::Sub<S, Output = S>,
         {
             #[inline]
             fn sub_assign(&mut self, rhs: T) {
@@ -309,10 +381,11 @@ macro_rules! implOpsForVectorQuantity {
             }
         }
 
-        impl<T> std::cmp::PartialEq<T> for $t
+        impl<T, S> std::cmp::PartialEq<T> for $t<S>
         where
-            $t: From<T> + VectorQuantity,
-            T: VectorQuantity,
+            $t<S>: From<T> + VectorQuantity<S>,
+            T: Copy,
+            S: Quantity + PartialEq,
         {
             #[inline]
             fn eq(&self, rhs: &T) -> bool {
@@ -325,9 +398,10 @@ macro_rules! implOpsForVectorQuantity {
         }
 
         #[cfg(feature = "use_optional")]
-        impl optional::OptEq for $t
+        impl<S> optional::OptEq for $t<S>
         where
-            $t: VectorQuantity,
+            $t<S>: VectorQuantity<S> + PartialEq,
+            S: Quantity,
         {
             #[inline]
             fn opt_eq(&self, other: &Self) -> bool {
@@ -342,6 +416,7 @@ mod length;
 mod pressure_vertical_velocity;
 mod pressures;
 mod specific_energy;
+mod speed;
 mod temperatures;
 mod unitless;
 mod winds;

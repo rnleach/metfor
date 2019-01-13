@@ -14,7 +14,7 @@ where
     let passes = <L as Sub<R>>::Output::pack(f64::abs((left - right).unpack())) <= tol;
 
     if !passes {
-        println!("{} !~= {} within tolerance {}", left, right, tol);
+        println!("{:?} !~= {:?} within tolerance {:?}", left, right, tol);
     }
 
     passes
@@ -30,7 +30,7 @@ where
     let passes = (a - b) <= tol;
 
     if !passes {
-        println!("{} !~<= {} within tolerance {}", a, b, tol);
+        println!("{:?} !~<= {:?} within tolerance {:?}", a, b, tol);
     }
 
     passes

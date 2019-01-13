@@ -1,10 +1,8 @@
 //! Temperature units
 use crate::constants::*;
 use crate::types::Quantity;
-use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt::Display;
-use std::ops::{Add, Neg, Sub};
+use std::ops::{Add, Sub};
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
@@ -14,14 +12,20 @@ pub trait TempDiff: Quantity + PartialOrd + PartialEq {}
 
 /// Temperature in Fahrenheit units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Fahrenheit(pub f64);
 
 /// Temperature in Celsius units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Celsius(pub f64);
 
 /// Temperature in Kelvin units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Kelvin(pub f64);
 
 impl Temperature for Fahrenheit {}
@@ -30,18 +34,21 @@ impl Temperature for Kelvin {}
 
 /// Temperature difference in Fahrenheit units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct FahrenheitDiff(pub f64);
 
 /// Temperature difference in Celsius units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct CelsiusDiff(pub f64);
 
 /// Temperature difference in Kelvin units.
 pub type KelvinDiff = CelsiusDiff;
 
-impl TempDiff for Fahrenheit {}
-impl TempDiff for Celsius {}
-impl TempDiff for Kelvin {}
+impl TempDiff for FahrenheitDiff {}
+impl TempDiff for CelsiusDiff {}
 
 macro_rules! implQuantityForT {
     ($t:tt) => {
@@ -72,13 +79,6 @@ macro_rules! implQuantityForT {
                 } else {
                     Some(self.0)
                 }
-            }
-        }
-
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
             }
         }
 
@@ -113,21 +113,6 @@ macro_rules! implQuantityForDiffT {
             #[inline]
             fn into_option(self) -> Option<f64> {
                 Some(self.0)
-            }
-        }
-
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
-            }
-        }
-
-        impl Neg for $t {
-            type Output = $t;
-
-            fn neg(self) -> Self::Output {
-                Self::Output::pack(-self.unpack())
             }
         }
 
@@ -268,36 +253,6 @@ impl From<CelsiusDiff> for FahrenheitDiff {
     #[inline]
     fn from(c: CelsiusDiff) -> Self {
         FahrenheitDiff(c.0 * 1.8)
-    }
-}
-
-impl Display for Celsius {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}C", self.0)
-    }
-}
-
-impl Display for Fahrenheit {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}F", self.0)
-    }
-}
-
-impl Display for Kelvin {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}K", self.0)
-    }
-}
-
-impl Display for CelsiusDiff {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{0394}\u{00B0}(C or K)", self.0)
-    }
-}
-
-impl Display for FahrenheitDiff {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{0394}\u{00B0}F", self.0)
     }
 }
 

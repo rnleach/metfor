@@ -6,7 +6,7 @@ use crate::types::*;
 
 /// Acceleration due to gravity at the Earth's surface. (m s<sup>-2</sup>)
 #[doc(hidden)]
-pub const g: f64 = 9.806_65;
+pub const g: f64 = -9.806_65;
 
 /// The gas constant for dry air. (J K<sup>-1</sup> kg<sup>-1</sup>)
 pub const Rd: JpKgpK = JpKgpK(Rd_);

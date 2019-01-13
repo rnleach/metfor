@@ -1,18 +1,20 @@
 //! Pressure units
 use crate::types::Quantity;
-use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for Pressure types.
 pub trait Pressure: Quantity {}
 
 /// Pressure in hPa units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct HectoPascal(pub f64);
 
 /// Pressure in mb units.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Millibar(pub f64);
 
 impl Pressure for HectoPascal {}
@@ -50,13 +52,6 @@ macro_rules! implQuantity {
             }
         }
 
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
-            }
-        }
-
         implOpsForQuantity!($t);
     };
 }
@@ -75,17 +70,5 @@ impl From<HectoPascal> for Millibar {
     #[inline]
     fn from(hpa: HectoPascal) -> Self {
         Millibar(hpa.0)
-    }
-}
-
-impl Display for HectoPascal {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} hPa", self.0)
-    }
-}
-
-impl Display for Millibar {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{} mb", self.0)
     }
 }

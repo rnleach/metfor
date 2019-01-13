@@ -597,7 +597,7 @@ where
 /// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
 /// when finding wet bulb temperature.
 // FIXME: Update to use Brent's method.
-fn find_root(f: &Fn(f64) -> Option<f64>, mut low_val: f64, mut high_val: f64) -> Option<f64> {
+fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut low_val: f64, mut high_val: f64) -> Option<f64> {
     use std::f64;
     const MAX_IT: usize = 50;
     const EPS: f64 = 1.0e-10;
@@ -754,7 +754,7 @@ mod test {
                     Some(mw) => {
                         if let Some(back) = dew_point_from_p_and_mw(press, mw) {
                             println!(
-                                "{} == {} with tolerance <= {}",
+                                "{:?} == {:?} with tolerance <= {:?}",
                                 dp,
                                 back,
                                 f64::abs(dp.unwrap() - back.unwrap())
@@ -846,7 +846,7 @@ mod test {
                         .and_then(|theta_e_val| Some((theta_e_val, theta_e(t, t, p)?)))
                         .and_then(|pair| Some((theta(p, t), pair.0, pair.1)))
                     {
-                        println!("{} <= {} <= {}", theta, theta_e, theta_es);
+                        println!("{:?} <= {:?} <= {:?}", theta, theta_e, theta_es);
                         assert!(
                             approx_lte(theta, theta_e, CelsiusDiff(TOL))
                                 && approx_lte(theta_e, theta_es, CelsiusDiff(TOL))
@@ -864,7 +864,12 @@ mod test {
                 if let Some(t_back) = theta_e(t, t, p).and_then(|theta_es| {
                     temperature_from_theta_e_saturated_and_pressure(p, theta_es)
                 }) {
-                    println!("{} {} {}", t, t_back, (t.unwrap() - t_back.unwrap()).abs());
+                    println!(
+                        "{:?} {:?} {:?}",
+                        t,
+                        t_back,
+                        (t.unwrap() - t_back.unwrap()).abs()
+                    );
                     assert!(approx_equal(t, t_back, CelsiusDiff(1.0e-7)));
                 }
             }
@@ -911,7 +916,7 @@ mod test {
 
         for (t, (dp, (p, target))) in t_c.zip(dp_c.zip(p_hpa.zip(vt))) {
             println!(
-                "target = {}, value = {}",
+                "target = {:?}, value = {:?}",
                 target,
                 virtual_temperature(t, dp, p).unwrap()
             );

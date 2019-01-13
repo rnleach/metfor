@@ -1,38 +1,50 @@
 //! Length units for elevation and geopotential height.
 use crate::types::Quantity;
-use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for elevation/height types.
 pub trait Length: Quantity + PartialEq + PartialOrd {}
 
 /// Length in meters, usually used for geopotential height and elevation.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Meters(pub f64);
 
 /// Length in decameters, usually used for geopotential height.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Decameters(pub f64);
 
 /// Length in feet, usually used for geopotential height and elevation.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Feet(pub f64);
 
 /// Length in kilometers, usually used for geopotential height above ground level.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Km(pub f64);
 
 /// Length in inches, usually used for precipitation depth or precipitable water.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Inches(pub f64);
 
 /// Length in millimeters, usually used for precipitation depth or precipitable water.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Mm(pub f64);
 
 /// Length in centimeters, usually used for precipitation depth or precipitable water.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct Cm(pub f64);
 
 impl Length for Meters {}
@@ -65,13 +77,6 @@ macro_rules! implQuantity {
             #[inline]
             fn into_option(self) -> Option<f64> {
                 Some(self.0)
-            }
-        }
-
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
             }
         }
 
@@ -399,51 +404,5 @@ impl From<Mm> for Inches {
     #[inline]
     fn from(h: Mm) -> Self {
         Inches::from(Feet::from(h))
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-//                                     Display implementations
-//--------------------------------------------------------------------------------------------------
-
-impl Display for Meters {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}m", self.0)
-    }
-}
-
-impl Display for Decameters {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}dm", self.0)
-    }
-}
-
-impl Display for Feet {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}ft", self.0)
-    }
-}
-
-impl Display for Km {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.2}km", self.0)
-    }
-}
-
-impl Display for Inches {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.2}in", self.0)
-    }
-}
-
-impl Display for Cm {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}cm", self.0)
-    }
-}
-
-impl Display for Mm {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.0}mm", self.0)
     }
 }

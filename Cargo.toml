@@ -1,6 +1,6 @@
 [package]
 name = "metfor"
-version = "0.6.2"
+version = "0.7.0"
 edition = "2018"
 
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
@@ -15,6 +15,9 @@ keywords = ["weather","meteorology"]
 [features]
 default = []
 use_optional = ["optional"]
+use_serde = ["serde", "serde_derive"]
 
 [dependencies]
 optional = { version = "0.5.0", optional = true }
+serde = { version = "^1.0", optional = true }
+serde_derive = { version = "^1.0", optional = true }

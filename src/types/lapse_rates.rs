@@ -1,8 +1,6 @@
 //! Lapse rate units
 use crate::types::{Feet, Km, Quantity};
-use std::borrow::Borrow;
 use std::cmp::Ordering;
-use std::fmt::Display;
 
 /// Marker trait for temperature lapse rate types.
 pub trait TempLR: Quantity + PartialEq + PartialOrd {}
@@ -12,10 +10,14 @@ pub trait Hydrolapse: Quantity + PartialOrd + PartialEq {}
 
 /// Temperature lapse rate in Fahrenheit per thousand feet (kft).
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct FahrenheitPKft(pub f64);
 
 /// Temperature lapse rate in Celsius per kilometer.
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct CelsiusPKm(pub f64);
 
 /// Temperature lapse rate in Kelvin per kilometer.
@@ -23,11 +25,15 @@ pub type KelvinPKm = CelsiusPKm;
 
 /// Hydrolapse in for mixing ratio in km<sup>-1</sup>
 #[derive(Clone, Copy, Debug)]
-pub struct HydrolapsePKm(f64);
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
+pub struct HydrolapsePKm(pub f64);
 
 /// Hydrolapse in for mixing ratio in g / kg/ km
 #[derive(Clone, Copy, Debug)]
-pub struct HydrolapseGPKgPKm(f64);
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
+pub struct HydrolapseGPKgPKm(pub f64);
 
 impl TempLR for FahrenheitPKft {}
 impl TempLR for CelsiusPKm {}
@@ -55,13 +61,6 @@ macro_rules! implQuantity {
             #[inline]
             fn into_option(self) -> Option<f64> {
                 Some(self.0)
-            }
-        }
-
-        impl Borrow<f64> for $t {
-            #[inline]
-            fn borrow(&self) -> &f64 {
-                &self.0
             }
         }
 
@@ -104,29 +103,5 @@ impl From<HydrolapseGPKgPKm> for HydrolapsePKm {
     #[inline]
     fn from(hl: HydrolapseGPKgPKm) -> Self {
         HydrolapsePKm(hl.unpack() / 1000.0)
-    }
-}
-
-impl Display for CelsiusPKm {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}C/km", self.0)
-    }
-}
-
-impl Display for FahrenheitPKft {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}\u{00B0}F/kft", self.0)
-    }
-}
-
-impl Display for HydrolapsePKm {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.4}km\u{207B}\u{2081}", self.0)
-    }
-}
-
-impl Display for HydrolapseGPKgPKm {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "{:.1}g kg\u{207B}\u{2081} km\u{207B}\u{2081}", self.0)
     }
 }
