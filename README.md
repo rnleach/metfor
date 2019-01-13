@@ -39,6 +39,6 @@ let t2 = Celsius(0.0);
 let p2 = Millibar(700.0);
 let theta2 = theta(p2, t2);
 
-println!("theta1 = {} and theta2 = {}", theta1, theta2);
+println!("theta1 = {:?} and theta2 = {:?}", theta1, theta2);
 
 ```
