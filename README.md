@@ -19,7 +19,7 @@ I investigated using some sort of dimensional analysis via types with a crate li
 I decided I did not want to make another crate part of the API since choosing to use one would force
 that library on the users of this library.
 
-I've found the [optional] [optional] crate to be very useful when dealing with `f64` types in
+I've found the [optional][optional] crate to be very useful when dealing with `f64` types in
 situations where there may be missing values, so I included a feature `use_optional` that enables
 the newtypes in this crate to be used in the same manner as an `f64` is with `optional`.
 
