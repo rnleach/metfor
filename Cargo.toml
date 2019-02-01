@@ -1,6 +1,6 @@
 [package]
 name = "metfor"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2018"
 
 authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
