@@ -4,7 +4,7 @@
 
 Meteorological constants and formulas.
 
-This library includes _newtype_ types, or wrapper types, to help with using the proper units when 
+This library includes _newtype_ types, or wrapper types, to help with using the proper units when
 doing calculations, some common meteorological constants, and some functions for basic calculations.
 It has thus far been developed to support libraries and an application used for displaying and
 analyzing skew-t data. So you will find the functions and variables are mostly things that would

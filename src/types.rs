@@ -1,6 +1,7 @@
 #![macro_use]
 //! New type wrappers for meteorlogical units.
 
+pub use self::helicity::*;
 pub use self::lapse_rates::*;
 pub use self::length::*;
 pub use self::pressure_vertical_velocity::*;
@@ -411,6 +412,7 @@ macro_rules! implOpsForVectorQuantity {
     };
 }
 
+mod helicity;
 mod lapse_rates;
 mod length;
 mod pressure_vertical_velocity;
