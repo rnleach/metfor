@@ -2,7 +2,7 @@
 use crate::constants::*;
 use crate::types::Quantity;
 use std::cmp::Ordering;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Sub, AddAssign};
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
@@ -148,6 +148,17 @@ where
     }
 }
 
+impl<T> AddAssign<T> for Celsius
+where
+    CelsiusDiff: From<T>,
+{
+    #[inline]
+    fn add_assign(&mut self, rhs: T) {
+        let rhs = CelsiusDiff::from(rhs);
+        *self = Self::pack(self.unpack() + rhs.unpack())
+    }
+}
+
 impl<T> Sub<T> for Kelvin
 where
     Kelvin: From<T>,
@@ -174,6 +185,17 @@ where
     }
 }
 
+impl<T> AddAssign<T> for Kelvin
+where
+    KelvinDiff: From<T>,
+{
+    #[inline]
+    fn add_assign(&mut self, rhs: T) {
+        let rhs = KelvinDiff::from(rhs);
+        *self = Self::pack(self.unpack() + rhs.unpack())
+    }
+}
+
 impl<T> Sub<T> for Fahrenheit
 where
     Fahrenheit: From<T>,
@@ -197,6 +219,17 @@ where
     fn add(self, rhs: T) -> Self::Output {
         let rhs = FahrenheitDiff::from(rhs);
         Self::Output::pack(self.unpack() + rhs.unpack())
+    }
+}
+
+impl<T> AddAssign<T> for Fahrenheit
+where
+    FahrenheitDiff: From<T>,
+{
+    #[inline]
+    fn add_assign(&mut self, rhs: T) {
+        let rhs = FahrenheitDiff::from(rhs);
+        *self = Self::pack(self.unpack() + rhs.unpack())
     }
 }
 
