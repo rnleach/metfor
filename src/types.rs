@@ -412,6 +412,34 @@ macro_rules! implOpsForVectorQuantity {
     };
 }
 
+//--------------------------------------------------------------------------------------------------
+//                                   Conversion macros
+//--------------------------------------------------------------------------------------------------
+
+macro_rules! single_conversion {
+    ($from:tt, $to:tt, $pre_multiplier:expr, $shift:expr, $post_multiplier:expr) => {
+        impl From<$from> for $to {
+            #[inline]
+            fn from(v: $from) -> Self {
+                $to(((v.0 * $pre_multiplier) + $shift) * $post_multiplier)
+            }
+        }
+    };
+}
+
+macro_rules! double_conversion {
+    ($from:tt, $to:tt, $pre_multiplier:expr, $shift:expr, $post_multiplier:expr) => {
+        single_conversion!($from, $to, $pre_multiplier, $shift, $post_multiplier);
+        single_conversion!(
+            $to,
+            $from,
+            1.0 / $post_multiplier,
+            -$shift,
+            1.0 / $pre_multiplier
+        );
+    };
+}
+
 mod helicity;
 mod lapse_rates;
 mod length;

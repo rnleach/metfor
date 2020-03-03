@@ -69,98 +69,11 @@ implQuantity!(Knots);
 implQuantity!(MilesPHour);
 implQuantity!(KmPHour);
 
-//--------------------------------------------------------------------------------------------------
-//                                    Kilometer per hour Conversions
-//--------------------------------------------------------------------------------------------------
-impl From<MetersPSec> for KmPHour {
-    #[inline]
-    fn from(s: MetersPSec) -> Self {
-        KmPHour(s.0 / 1_000.0 * 3_600.0)
-    }
-}
+double_conversion!(MetersPSec, KmPHour, 3.6, 0.0, 1.0);
+double_conversion!(Knots, KmPHour, 1.852, 0.0, 1.0);
+double_conversion!(MilesPHour, KmPHour, 1.609_34, 0.0, 1.0);
 
-impl From<Knots> for KmPHour {
-    #[inline]
-    fn from(s: Knots) -> Self {
-        KmPHour(s.0 * 1.852)
-    }
-}
+double_conversion!(MetersPSec, Knots, 1.943_844_494, 0.0, 1.0);
+double_conversion!(MilesPHour, Knots, 0.868_976, 0.0, 1.0);
 
-impl From<MilesPHour> for KmPHour {
-    #[inline]
-    fn from(s: MilesPHour) -> Self {
-        KmPHour(s.0 * 1.609_34)
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-//                                      Knots Conversions
-//--------------------------------------------------------------------------------------------------
-impl From<MetersPSec> for Knots {
-    #[inline]
-    fn from(s: MetersPSec) -> Self {
-        Knots(s.0 / 0.514_444_44)
-    }
-}
-
-impl From<KmPHour> for Knots {
-    #[inline]
-    fn from(s: KmPHour) -> Self {
-        Knots(s.0 * 0.5399_57)
-    }
-}
-
-impl From<MilesPHour> for Knots {
-    #[inline]
-    fn from(s: MilesPHour) -> Self {
-        Knots(s.0 * 0.868_976)
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-//                                      MilesPHour Conversions
-//--------------------------------------------------------------------------------------------------
-impl From<MetersPSec> for MilesPHour {
-    #[inline]
-    fn from(s: MetersPSec) -> Self {
-        MilesPHour(s.0 * 2.236_94)
-    }
-}
-
-impl From<KmPHour> for MilesPHour {
-    #[inline]
-    fn from(s: KmPHour) -> Self {
-        MilesPHour(s.0 * 0.621_371)
-    }
-}
-
-impl From<Knots> for MilesPHour {
-    #[inline]
-    fn from(s: Knots) -> Self {
-        MilesPHour(s.0 * 1.150_78)
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-//                                    MeterPSec Conversions
-//--------------------------------------------------------------------------------------------------
-impl From<MilesPHour> for MetersPSec {
-    #[inline]
-    fn from(s: MilesPHour) -> Self {
-        MetersPSec(s.0 * 0.447_04)
-    }
-}
-
-impl From<KmPHour> for MetersPSec {
-    #[inline]
-    fn from(s: KmPHour) -> Self {
-        MetersPSec(s.0 * 0.277_778)
-    }
-}
-
-impl From<Knots> for MetersPSec {
-    #[inline]
-    fn from(s: Knots) -> Self {
-        MetersPSec(s.0 * 0.514_444_44)
-    }
-}
+double_conversion!(MetersPSec, MilesPHour, 2.236_94, 0.0, 1.0);

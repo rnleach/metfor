@@ -11,6 +11,12 @@ pub trait Pressure: Quantity {}
 #[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
 pub struct HectoPascal(pub f64);
 
+/// Pressure in Pa units.
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
+pub struct Pascal(pub f64);
+
 /// Pressure in mb units.
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
@@ -18,6 +24,7 @@ pub struct HectoPascal(pub f64);
 pub struct Millibar(pub f64);
 
 impl Pressure for HectoPascal {}
+impl Pressure for Pascal {}
 impl Pressure for Millibar {}
 
 macro_rules! implQuantity {
@@ -57,18 +64,9 @@ macro_rules! implQuantity {
 }
 
 implQuantity!(HectoPascal);
+implQuantity!(Pascal);
 implQuantity!(Millibar);
 
-impl From<Millibar> for HectoPascal {
-    #[inline]
-    fn from(mb: Millibar) -> Self {
-        HectoPascal(mb.0)
-    }
-}
-
-impl From<HectoPascal> for Millibar {
-    #[inline]
-    fn from(hpa: HectoPascal) -> Self {
-        Millibar(hpa.0)
-    }
-}
+double_conversion!(Millibar, HectoPascal, 1.0, 0.0, 1.0);
+double_conversion!(HectoPascal, Pascal, 100.0, 0.0, 1.0);
+double_conversion!(Millibar, Pascal, 100.0, 0.0, 1.0);

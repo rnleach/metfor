@@ -321,5 +321,4 @@ mod test {
             assert_approx_eq!(dir_spd, uv_wind, Knots(TOL), "Vector mismatch.")
         }
     }
-
 }

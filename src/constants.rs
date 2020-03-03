@@ -40,5 +40,5 @@ pub const FREEZING: Celsius = Celsius(0.0);
 pub const DRY_ADIABATIC_LAPSE_RATE: CelsiusPKm = CelsiusPKm(-g);
 
 pub(crate) const ABSOLUTE_ZERO_K: f64 = 0.0;
-pub(crate) const ABSOLUTE_ZERO_C: f64 = -273.15;
+// pub(crate) const ABSOLUTE_ZERO_C: f64 = -273.15;
 // pub(crate) const ABSOLUTE_ZERO_F: f64 = -459.67;

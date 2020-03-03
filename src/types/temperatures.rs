@@ -2,7 +2,7 @@
 use crate::constants::*;
 use crate::types::Quantity;
 use std::cmp::Ordering;
-use std::ops::{Add, Sub, AddAssign};
+use std::ops::{Add, AddAssign, Sub};
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
@@ -233,61 +233,11 @@ where
     }
 }
 
-impl From<Celsius> for Fahrenheit {
-    #[inline]
-    fn from(c: Celsius) -> Self {
-        Fahrenheit(1.8 * c.0 + 32.0)
-    }
-}
+double_conversion!(Celsius, Fahrenheit, 1.8, 32.0, 1.0);
+double_conversion!(Kelvin, Fahrenheit, 1.8, 273.15 + 32.0, 1.0);
+double_conversion!(Celsius, Kelvin, 1.0, 273.15, 1.0);
 
-impl From<Kelvin> for Fahrenheit {
-    #[inline]
-    fn from(k: Kelvin) -> Self {
-        Fahrenheit::from(Celsius::from(k))
-    }
-}
-
-impl From<Fahrenheit> for Celsius {
-    #[inline]
-    fn from(f: Fahrenheit) -> Self {
-        Celsius((f.0 - 32.0) / 1.8)
-    }
-}
-
-impl From<Kelvin> for Celsius {
-    #[inline]
-    fn from(k: Kelvin) -> Self {
-        Celsius(k.0 + ABSOLUTE_ZERO_C)
-    }
-}
-
-impl From<Celsius> for Kelvin {
-    #[inline]
-    fn from(c: Celsius) -> Self {
-        Kelvin(c.0 - ABSOLUTE_ZERO_C)
-    }
-}
-
-impl From<Fahrenheit> for Kelvin {
-    #[inline]
-    fn from(f: Fahrenheit) -> Self {
-        Kelvin::from(Celsius::from(f))
-    }
-}
-
-impl From<FahrenheitDiff> for CelsiusDiff {
-    #[inline]
-    fn from(f: FahrenheitDiff) -> Self {
-        CelsiusDiff(f.0 / 1.8)
-    }
-}
-
-impl From<CelsiusDiff> for FahrenheitDiff {
-    #[inline]
-    fn from(c: CelsiusDiff) -> Self {
-        FahrenheitDiff(c.0 * 1.8)
-    }
-}
+double_conversion!(CelsiusDiff, FahrenheitDiff, 1.8, 0.0, 1.0);
 
 #[cfg(test)]
 mod test {
