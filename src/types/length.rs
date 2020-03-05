@@ -134,10 +134,10 @@ macro_rules! make_there_and_back_tests {
 //                                       Conversions
 //--------------------------------------------------------------------------------------------------
 
-double_conversion!(Km, Decameters, 0.01, 0.0, 1.0);
-double_conversion!(Km, Meters, 0.001, 0.0, 1.0);
-double_conversion!(Km, Cm, 0.000_01, 0.0, 1.0);
-double_conversion!(Km, Mm, 0.000_001, 0.0, 1.0);
+double_conversion!(Km, Decameters, 100.0, 0.0, 1.0);
+double_conversion!(Km, Meters, 1_000.0, 0.0, 1.0);
+double_conversion!(Km, Cm, 100_000.0, 0.0, 1.0);
+double_conversion!(Km, Mm, 1_000_000.0, 0.0, 1.0);
 double_conversion!(Km, StatuteMiles, 0.621_371, 0.0, 1.0);
 double_conversion!(Km, Feet, 3_280.84, 0.0, 1.0);
 double_conversion!(Km, Inches, 39_370.1, 0.0, 1.0);
@@ -178,6 +178,17 @@ mod tests {
     use crate::test_utils::approx_equal;
 
     const TOL: f64 = 1.0e-7;
+
+    #[test]
+    fn basics() {
+        assert!(approx_equal(Km(1.0), Decameters(100.0), Km(TOL)));
+        assert!(approx_equal(Km(1.0), Meters(1_000.0), Km(TOL)));
+        assert!(approx_equal(Km(1.0), Cm(100_000.0), Km(TOL)));
+        assert!(approx_equal(Km(1.0), Mm(1_000_000.0), Km(TOL)));
+        assert!(approx_equal(Km(1.0), StatuteMiles(0.621_371), Km(TOL)));
+        assert!(approx_equal(Km(1.0), Feet(3_280.84), Km(TOL)));
+        assert!(approx_equal(Km(1.0), Inches(39_370.1), Km(TOL)));
+    }
 
     make_there_and_back_tests!(km_decameters, Km, Decameters, Km(0.0), Km(100.0), Km(TOL));
     make_there_and_back_tests!(km_meters, Km, Meters, Km(0.0), Km(100.0), Km(TOL));
