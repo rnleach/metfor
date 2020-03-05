@@ -355,4 +355,12 @@ mod test {
             assert!(approx_equal(celsius, back_to_celsius, CelsiusDiff(TOL)));
         }
     }
+
+    #[test]
+    fn test_temperature_diff_conversions() {
+        let cd = CelsiusDiff(100.0);
+        let fd = FahrenheitDiff::from(cd);
+
+        assert!(approx_equal(fd, FahrenheitDiff(180.0), FahrenheitDiff(TOL)));
+    }
 }

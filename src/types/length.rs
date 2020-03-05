@@ -177,20 +177,15 @@ mod tests {
     use super::*;
     use crate::test_utils::approx_equal;
 
-    make_there_and_back_tests!(
-        km_decameters,
-        Km,
-        Decameters,
-        Km(0.0),
-        Km(100.0),
-        Km(1.0e-7)
-    );
-    make_there_and_back_tests!(km_meters, Km, Meters, Km(0.0), Km(100.0), Km(1.0e-7));
-    make_there_and_back_tests!(km_cm, Km, Cm, Km(0.0), Km(100.0), Km(1.0e-7));
-    make_there_and_back_tests!(km_mm, Km, Mm, Km(0.0), Km(100.0), Km(1.0e-7));
-    make_there_and_back_tests!(km_miles, Km, StatuteMiles, Km(0.0), Km(100.0), Km(1.0e-7));
-    make_there_and_back_tests!(km_feet, Km, Feet, Km(0.0), Km(100.0), Km(1.0e-7));
-    make_there_and_back_tests!(km_inches, Km, Inches, Km(0.0), Km(100.0), Km(1.0e-7));
+    const TOL: f64 = 1.0e-7;
+
+    make_there_and_back_tests!(km_decameters, Km, Decameters, Km(0.0), Km(100.0), Km(TOL));
+    make_there_and_back_tests!(km_meters, Km, Meters, Km(0.0), Km(100.0), Km(TOL));
+    make_there_and_back_tests!(km_cm, Km, Cm, Km(0.0), Km(100.0), Km(TOL));
+    make_there_and_back_tests!(km_mm, Km, Mm, Km(0.0), Km(100.0), Km(TOL));
+    make_there_and_back_tests!(km_miles, Km, StatuteMiles, Km(0.0), Km(100.0), Km(TOL));
+    make_there_and_back_tests!(km_feet, Km, Feet, Km(0.0), Km(100.0), Km(TOL));
+    make_there_and_back_tests!(km_inches, Km, Inches, Km(0.0), Km(100.0), Km(TOL));
 
     make_there_and_back_tests!(
         dm_meters,
@@ -198,7 +193,7 @@ mod tests {
         Meters,
         Decameters(0.0),
         Decameters(100.0),
-        Decameters(1.0e-7)
+        Decameters(TOL)
     );
     make_there_and_back_tests!(
         dm_cm,
@@ -206,7 +201,7 @@ mod tests {
         Cm,
         Decameters(0.0),
         Decameters(100.0),
-        Decameters(1.0e-7)
+        Decameters(TOL)
     );
     make_there_and_back_tests!(
         dm_mm,
@@ -214,7 +209,7 @@ mod tests {
         Mm,
         Decameters(0.0),
         Decameters(100.0),
-        Decameters(1.0e-7)
+        Decameters(TOL)
     );
     make_there_and_back_tests!(
         dm_miles,
@@ -222,7 +217,7 @@ mod tests {
         StatuteMiles,
         Decameters(0.0),
         Decameters(100.0),
-        Decameters(1.0e-7)
+        Decameters(TOL)
     );
     make_there_and_back_tests!(
         dm_feet,
@@ -230,7 +225,7 @@ mod tests {
         Feet,
         Decameters(0.0),
         Decameters(100.0),
-        Decameters(1.0e-7)
+        Decameters(TOL)
     );
     make_there_and_back_tests!(
         dm_inches,
@@ -238,18 +233,18 @@ mod tests {
         Inches,
         Decameters(0.0),
         Decameters(100.0),
-        Decameters(1.0e-7)
+        Decameters(TOL)
     );
 
-    make_there_and_back_tests!(m_cm, Meters, Cm, Meters(0.0), Meters(100.0), Meters(1.0e-7));
-    make_there_and_back_tests!(m_mm, Meters, Mm, Meters(0.0), Meters(100.0), Meters(1.0e-7));
+    make_there_and_back_tests!(m_cm, Meters, Cm, Meters(0.0), Meters(100.0), Meters(TOL));
+    make_there_and_back_tests!(m_mm, Meters, Mm, Meters(0.0), Meters(100.0), Meters(TOL));
     make_there_and_back_tests!(
         m_miles,
         Meters,
         StatuteMiles,
         Meters(0.0),
         Meters(100.0),
-        Meters(1.0e-7)
+        Meters(TOL)
     );
     make_there_and_back_tests!(
         m_feet,
@@ -257,7 +252,7 @@ mod tests {
         Feet,
         Meters(0.0),
         Meters(100.0),
-        Meters(1.0e-7)
+        Meters(TOL)
     );
     make_there_and_back_tests!(
         m_inches,
@@ -265,17 +260,17 @@ mod tests {
         Inches,
         Meters(0.0),
         Meters(100.0),
-        Meters(1.0e-7)
+        Meters(TOL)
     );
 
-    make_there_and_back_tests!(cm_mm, Cm, Mm, Cm(0.0), Cm(100.0), Cm(1.0e-7));
-    make_there_and_back_tests!(cm_miles, Cm, StatuteMiles, Cm(0.0), Cm(100.0), Cm(1.0e-7));
-    make_there_and_back_tests!(cm_feet, Cm, Feet, Cm(0.0), Cm(100.0), Cm(1.0e-7));
-    make_there_and_back_tests!(cm_inches, Cm, Inches, Cm(0.0), Cm(100.0), Cm(1.0e-7));
+    make_there_and_back_tests!(cm_mm, Cm, Mm, Cm(0.0), Cm(100.0), Cm(TOL));
+    make_there_and_back_tests!(cm_miles, Cm, StatuteMiles, Cm(0.0), Cm(100.0), Cm(TOL));
+    make_there_and_back_tests!(cm_feet, Cm, Feet, Cm(0.0), Cm(100.0), Cm(TOL));
+    make_there_and_back_tests!(cm_inches, Cm, Inches, Cm(0.0), Cm(100.0), Cm(TOL));
 
-    make_there_and_back_tests!(mm_miles, Mm, StatuteMiles, Mm(0.0), Mm(100.0), Mm(1.0e-7));
-    make_there_and_back_tests!(mm_feet, Mm, Feet, Mm(0.0), Mm(100.0), Mm(1.0e-7));
-    make_there_and_back_tests!(mm_inches, Mm, Inches, Mm(0.0), Mm(100.0), Mm(1.0e-7));
+    make_there_and_back_tests!(mm_miles, Mm, StatuteMiles, Mm(0.0), Mm(100.0), Mm(TOL));
+    make_there_and_back_tests!(mm_feet, Mm, Feet, Mm(0.0), Mm(100.0), Mm(TOL));
+    make_there_and_back_tests!(mm_inches, Mm, Inches, Mm(0.0), Mm(100.0), Mm(TOL));
 
     make_there_and_back_tests!(
         sm_feet,
@@ -283,7 +278,7 @@ mod tests {
         Feet,
         StatuteMiles(0.0),
         StatuteMiles(100.0),
-        StatuteMiles(1.0e-7)
+        StatuteMiles(TOL)
     );
     make_there_and_back_tests!(
         sm_inches,
@@ -291,15 +286,8 @@ mod tests {
         Inches,
         StatuteMiles(0.0),
         StatuteMiles(100.0),
-        StatuteMiles(1.0e-7)
+        StatuteMiles(TOL)
     );
 
-    make_there_and_back_tests!(
-        feet_inches,
-        Feet,
-        Inches,
-        Feet(0.0),
-        Feet(100.0),
-        Feet(1.0e-7)
-    );
+    make_there_and_back_tests!(feet_inches, Feet, Inches, Feet(0.0), Feet(100.0), Feet(TOL));
 }
