@@ -3,7 +3,7 @@ name = "metfor"
 version = "0.7.4"
 edition = "2018"
 
-authors = ["Ryan Leach <clumsycodemonkey@gmail.com>"]
+authors = ["Ryan <rnleach@users.noreply.github.com>"]
 description = """Meteorological formulas and constants."""
 repository = "https://github.com/rnleach/metfor.git"
 readme = "README.md"
