@@ -37,7 +37,7 @@ pub trait Quantity: Copy + Debug + Sized {
         (lhs - rhs).abs() <= tol
     }
 
-    /// Test whether these two values are close
+    /// Get the absolute value.
     fn abs(self) -> Self {
         Self::pack(self.unpack().abs())
     }
