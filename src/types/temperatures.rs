@@ -2,7 +2,7 @@
 use crate::constants::*;
 use crate::types::Quantity;
 use std::cmp::Ordering;
-use std::ops::{Add, AddAssign, Sub};
+use std::ops::{Add, AddAssign, Div, Sub};
 
 /// Marker trait for temperature types.
 pub trait Temperature: Quantity + PartialEq + PartialOrd {}
@@ -230,6 +230,15 @@ where
     fn add_assign(&mut self, rhs: T) {
         let rhs = FahrenheitDiff::from(rhs);
         *self = Self::pack(self.unpack() + rhs.unpack())
+    }
+}
+
+impl Div<Kelvin> for CelsiusDiff {
+    type Output = f64;
+
+    #[inline]
+    fn div(self, rhs: Kelvin) -> Self::Output {
+        self.unpack() / rhs.unpack()
     }
 }
 

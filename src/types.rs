@@ -166,6 +166,15 @@ macro_rules! implMulDivOpsForQuantity {
             }
         }
 
+        impl std::ops::Div<f64> for $t {
+            type Output = $t;
+
+            #[inline]
+            fn div(self, rhs: f64) -> Self::Output {
+                Self::pack(self.unpack() / rhs)
+            }
+        }
+
         impl std::ops::DivAssign<f64> for $t {
             #[inline]
             fn div_assign(&mut self, rhs: f64) {
