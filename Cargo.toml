@@ -2,6 +2,7 @@
 name = "metfor"
 version = "0.8.0"
 edition = "2018"
+publish = false
 
 authors = ["Ryan <rnleach@users.noreply.github.com>"]
 description = """Meteorological formulas and constants."""
