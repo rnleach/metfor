@@ -100,7 +100,7 @@ where
 ///
 /// Returns: The dew point.
 #[inline]
-fn dew_point_from_vapor_pressure_over_liquid<P>(vp: P) -> Option<Celsius>
+pub fn dew_point_from_vapor_pressure_over_liquid<P>(vp: P) -> Option<Celsius>
 where
     P: Pressure,
     HectoPascal: From<P>,
