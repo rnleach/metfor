@@ -597,85 +597,76 @@ fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut a: f64, mut b: f64) -> Option<f
     const MAX_IT: usize = 50;
     const EPS: f64 = 1.0e-9;
 
-    if a > b {
-        ::std::mem::swap(&mut a, &mut b);
-    }
-
     let mut fa = f(a)?;
     let mut fb = f(b)?;
 
-    // Check to make sure we have bracketed a root.
-    if fa * fb > 0.0 {
+    // Check to make sure we are bracketed
+    if fa * fb >= 0.0 {
         return None;
     }
 
-    let mut c = b;
-    let mut fc = fb;
-    let mut d = 0.0;
-    let mut e = 0.0;
+    if fa.abs() < fb.abs() {
+        ::std::mem::swap(&mut a, &mut b);
+        ::std::mem::swap(&mut fa, &mut fb);
+    }
+
+    let mut c = a;
+    let mut fc = fa;
+    let mut d = c; // This value is never used, mflag ensures it will be initialized in the loop.
+    let mut mflag = true;
+
     for _ in 0..MAX_IT {
-        if (fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0) {
-            c = a;
-            fc = fa;
-            d = b - a;
-            e = d;
-        }
-        if fc.abs() < fa.abs() {
-            a = b;
-            b = c;
-            c = a;
-            fa = fb;
-            fb = fc;
-            fc = fa;
+        let mut s = if fa != fc && fb != fc {
+            // Try inverse quadratic for next step
+            (a * fb * fc) / ((fa - fb) * (fa - fc))
+                + (b * fa * fc) / ((fb - fa) * (fb - fc))
+                + (c * fa * fb) / ((fc - fa) * (fc - fb))
+        } else {
+            // Try secant method for next step
+            b - fb * (b - a) / (fb - fa)
+        };
+
+        // Check to see if bisection would be a better idea
+        let condition1 = if a < b {
+            s > b || s < (3.0 * a + b) / 4.0
+        } else {
+            s < b || s > (3.0 * a + b) / 4.0
+        };
+
+        let condition2 = mflag && (s - b).abs() >= (b - c).abs() / 2.0;
+        let condition3 = !mflag && (s - b).abs() >= (c - d).abs() / 2.0;
+        let condition4 = mflag && (b - c).abs() < EPS;
+        let condition5 = !mflag && (c - d).abs() < EPS;
+
+        if condition1 || condition2 || condition3 || condition4 || condition5 {
+            s = (a + b) / 2.0;
+            mflag = true;
+        } else {
+            mflag = false;
         }
 
-        let tol1 = 2.0 * EPS * b.abs() + 0.5 * EPS;
-        let xm = 0.5 * (c - b);
-        if xm.abs() <= tol1 || fb == 0.0 {
+        let fs = f(s)?;
+        d = c;
+        c = b;
+        fc = fb;
+
+        if fa * fs < 0.0 {
+            b = s;
+            fb = fs;
+        } else {
+            a = s;
+            fa = fs;
+        }
+
+        if fa.abs() < fb.abs() {
+            std::mem::swap(&mut a, &mut b);
+            std::mem::swap(&mut fa, &mut fb);
+        }
+
+        // Check for convergence and return
+        if fb == 0.0 || (b - a).abs() < EPS {
             return Some(b);
         }
-        if e.abs() >= tol1 && fa.abs() > fb.abs() {
-            let s = fb / fa;
-            let (mut p, mut q) = if a == c {
-                let p = 2.0 * xm * s;
-                let q = 1.0 - s;
-                (p, q)
-            } else {
-                let mut q = fa / fc;
-                let r = fb / fc;
-                let p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
-                q = (q - 1.0) * (r - 1.0) * (s - 1.0);
-                (p, q)
-            };
-
-            if p > 0.0 {
-                q = -q;
-            }
-
-            p = p.abs();
-
-            let min1 = 3.0 * xm * q - (tol1 * q).abs();
-            let min2 = (e * q).abs();
-
-            if 2.0 * p < min1.min(min2) {
-                e = d;
-                d = p / q;
-            } else {
-                d = xm;
-                e = d;
-            }
-        } else {
-            d = xm;
-            e = d;
-        }
-        a = b;
-        fa = fb;
-        if d.abs() > tol1 {
-            b += d;
-        } else {
-            b += if xm > 0.0 { tol1.abs() } else { -(tol1.abs()) };
-        }
-        fb = f(b)?;
     }
 
     None
