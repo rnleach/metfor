@@ -7,11 +7,11 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use metfor::*;
 
 criterion_main!(
+    find_root_benches,
     potential_temperature,
     vapor_pressure_liquid,
     vapor_pressure_ice_benches,
-    theta_e_benches,
-    find_root_benches
+    theta_e_benches
 );
 
 /**************************************************************************************************
