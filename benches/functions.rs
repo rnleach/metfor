@@ -3,7 +3,7 @@
 //! Run with `cargo bench --bench funtions -- --verbose vapor_pressure_over_ice` to select the
 //! single benchmark.
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use metfor::*;
 
 criterion_main!(
@@ -33,21 +33,18 @@ fn temperature_from_theta_e_saturated_and_pressure_bench(c: &mut Criterion) {
         .collect();
     let theta_es: Vec<_> = (260..321).step_by(10).map(|i| Kelvin(i as f64)).collect();
 
-    c.bench_function(
-        "temperature_from_theta_e_saturated_and_pressure_bench",
-        |b| {
-            b.iter(|| {
-                for p in &pressures {
-                    for theta_e in &theta_es {
-                        temperature_from_theta_e_saturated_and_pressure(
-                            black_box(*p),
-                            black_box(*theta_e),
-                        );
-                    }
+    c.bench_function("temperature_from_theta_e_saturated_and_pressure", |b| {
+        b.iter(|| {
+            for p in &pressures {
+                for theta_e in &theta_es {
+                    temperature_from_theta_e_saturated_and_pressure(
+                        black_box(*p),
+                        black_box(*theta_e),
+                    );
                 }
-            })
-        },
-    );
+            }
+        })
+    });
 }
 
 fn pressure_at_lcl_bench(c: &mut Criterion) {
@@ -145,7 +142,7 @@ fn theta_e_bench(c: &mut Criterion) {
 }
 
 fn latent_heat_of_condensation_bench(c: &mut Criterion) {
-    let temperatures: Vec<_> = (-40..36).step_by(5).map(|i| Celsius(i as f64)).collect();
+    let temperatures: Vec<_> = (-40..41).step_by(10).map(|i| Celsius(i as f64)).collect();
 
     c.bench_function("latent_heat_of_condensation", |b| {
         b.iter(|| {
@@ -187,17 +184,26 @@ criterion_group!(
 );
 
 fn rh_ice_bench(c: &mut Criterion) {
+    let temperatures: Vec<_> = (-40..11).step_by(10).map(|i| Celsius(i as f64)).collect();
+
     c.bench_function("rh_ice", |b| {
         b.iter(|| {
-            rh_ice(black_box(Celsius(-22.0)), black_box(Celsius(-40.0)));
+            for t in &temperatures {
+                for dp in temperatures.iter().filter(|&dp| dp <= t) {
+                    rh_ice(black_box(*t), black_box(*dp));
+                }
+            }
         })
     });
 }
 
 fn frost_point_from_vapor_pressure_over_ice_bench(c: &mut Criterion) {
-    let vps: Vec<_> = (0..120).map(|i| HectoPascal(i as f64)).collect();
+    let vps: Vec<_> = (0..121)
+        .step_by(10)
+        .map(|i| HectoPascal(i as f64))
+        .collect();
 
-    c.bench_function("dew_point_from_vapor_pressure_over_water", |b| {
+    c.bench_function("frost_point_from_vapor_pressure_over_ice", |b| {
         b.iter(|| {
             for vp in &vps {
                 frost_point_from_vapor_pressure_over_ice(black_box(*vp));
@@ -207,7 +213,7 @@ fn frost_point_from_vapor_pressure_over_ice_bench(c: &mut Criterion) {
 }
 
 fn vapor_pressure_ice_bench(c: &mut Criterion) {
-    let temperatures: Vec<_> = (-90..10).map(|i| Celsius(i as f64)).collect();
+    let temperatures: Vec<_> = (-90..11).step_by(10).map(|i| Celsius(i as f64)).collect();
 
     c.bench_function("vapor_pressure_ice", |b| {
         b.iter(|| {
@@ -232,8 +238,11 @@ criterion_group!(
 );
 
 fn specific_humidity_bench(c: &mut Criterion) {
-    let pressures: Vec<_> = (500..1050).map(|i| HectoPascal(i as f64)).collect();
-    let temperatures: Vec<_> = (-40..25).map(|i| Celsius(i as f64)).collect();
+    let pressures: Vec<_> = (500..1101)
+        .step_by(100)
+        .map(|i| HectoPascal(i as f64))
+        .collect();
+    let temperatures: Vec<_> = (-40..41).step_by(10).map(|i| Celsius(i as f64)).collect();
 
     c.bench_function("specific_humidity", |b| {
         b.iter(|| {
@@ -248,7 +257,7 @@ fn specific_humidity_bench(c: &mut Criterion) {
 
 fn dew_point_from_p_and_mw_bench(c: &mut Criterion) {
     let pressures: Vec<_> = (500..1050).map(|i| HectoPascal(i as f64)).collect();
-    let mws: Vec<_> = (0..600).map(|i| (i as f64) / 100.0).collect();
+    let mws: Vec<_> = (0..700).step_by(10).map(|i| (i as f64) / 100.0).collect();
 
     c.bench_function("dew_point_from_p_and_mw", |b| {
         b.iter(|| {
@@ -262,8 +271,11 @@ fn dew_point_from_p_and_mw_bench(c: &mut Criterion) {
 }
 
 fn mixing_ratio_bench(c: &mut Criterion) {
-    let pressures: Vec<_> = (500..1050).map(|i| HectoPascal(i as f64)).collect();
-    let temperatures: Vec<_> = (-40..25).map(|i| Celsius(i as f64)).collect();
+    let pressures: Vec<_> = (500..1101)
+        .step_by(100)
+        .map(|i| HectoPascal(i as f64))
+        .collect();
+    let temperatures: Vec<_> = (-40..41).step_by(10).map(|i| Celsius(i as f64)).collect();
 
     c.bench_function("mixing_ratio", |b| {
         b.iter(|| {
@@ -277,17 +289,26 @@ fn mixing_ratio_bench(c: &mut Criterion) {
 }
 
 fn rh_bench(c: &mut Criterion) {
+    let temperatures: Vec<_> = (-40..41).step_by(10).map(|i| Celsius(i as f64)).collect();
+
     c.bench_function("rh", |b| {
         b.iter(|| {
-            rh(black_box(Celsius(22.0)), black_box(Celsius(-1.0)));
+            for t in &temperatures {
+                for dp in temperatures.iter().filter(|&dp| dp <= t) {
+                    rh_ice(black_box(*t), black_box(*dp));
+                }
+            }
         })
     });
 }
 
 fn dew_point_from_vapor_pressure_over_liquid_bench(c: &mut Criterion) {
-    let vps: Vec<_> = (0..120).map(|i| HectoPascal(i as f64)).collect();
+    let vps: Vec<_> = (0..121)
+        .step_by(10)
+        .map(|i| HectoPascal(i as f64))
+        .collect();
 
-    c.bench_function("dew_point_from_vapor_pressure_over_water", |b| {
+    c.bench_function("dew_point_from_vapor_pressure_over_liquid", |b| {
         b.iter(|| {
             for vp in &vps {
                 dew_point_from_vapor_pressure_over_liquid(black_box(*vp));
@@ -297,9 +318,9 @@ fn dew_point_from_vapor_pressure_over_liquid_bench(c: &mut Criterion) {
 }
 
 fn vapor_pressure_liquid_water_bench(c: &mut Criterion) {
-    let dps: Vec<_> = (-90..60).map(|i| Celsius(i as f64)).collect();
+    let dps: Vec<_> = (-90..61).step_by(10).map(|i| Celsius(i as f64)).collect();
 
-    c.bench_function("vapor_pressure_liquid", |b| {
+    c.bench_function("vapor_pressure_liquid_water", |b| {
         b.iter(|| {
             for dew_point in &dps {
                 vapor_pressure_liquid_water(black_box(*dew_point));
@@ -318,40 +339,37 @@ criterion_group!(
 );
 
 fn theta_bench(c: &mut Criterion) {
-    let p = HectoPascal(700.0);
-    let t = Celsius(-2.8);
+    let pressures: Vec<_> = (500..1101)
+        .step_by(100)
+        .map(|i| HectoPascal(i as f64))
+        .collect();
+    let temperatures: Vec<_> = (-40..41).step_by(10).map(|i| Celsius(i as f64)).collect();
 
-    let args = (p, t);
-
-    c.bench_with_input(
-        BenchmarkId::new("theta", "700hPa and -2.8C"),
-        &args,
-        |b, &(p, t)| b.iter(|| theta(black_box(p), black_box(t))),
-    );
+    c.bench_function("theta", |b| {
+        b.iter(|| {
+            for p in &pressures {
+                for t in &temperatures {
+                    theta(black_box(*p), black_box(*t));
+                }
+            }
+        })
+    });
 }
 
 fn temperature_from_theta_bench(c: &mut Criterion) {
-    let pressure = HectoPascal(700.0);
-    let theta = Kelvin(298.0);
-    let args = (theta, pressure);
+    let pressures: Vec<_> = (500..1101)
+        .step_by(100)
+        .map(|i| HectoPascal(i as f64))
+        .collect();
+    let thetas: Vec<_> = (250..331).step_by(10).map(|i| Kelvin(i as f64)).collect();
 
-    c.bench_with_input(
-        BenchmarkId::new("temperature from theta", "700hPa and 298K"),
-        &args,
-        |b, &(theta, pressure)| {
-            b.iter(|| temperature_from_theta(black_box(theta), black_box(pressure)))
-        },
-    );
-
-    let pressure = HectoPascal(1000.0);
-    let theta = Kelvin(312.0);
-    let args = (theta, pressure);
-
-    c.bench_with_input(
-        BenchmarkId::new("temperature from theta", "1000hPa and 312"),
-        &args,
-        |b, &(theta, pressure)| {
-            b.iter(|| temperature_from_theta(black_box(theta), black_box(pressure)))
-        },
-    );
+    c.bench_function("temperature_from_theta", |b| {
+        b.iter(|| {
+            for p in &pressures {
+                for t in &thetas {
+                    theta(black_box(*p), black_box(*t));
+                }
+            }
+        })
+    });
 }
