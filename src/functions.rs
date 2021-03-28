@@ -590,45 +590,95 @@ where
     Some(temperature_from_theta::<HectoPascal, _>(vt_k, p))
 }
 
-/// Bisection algorithm for finding the root of an equation given values bracketing a root. Used
-/// when finding wet bulb temperature.
-// FIXME: Update to use Brent's method.
-fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut low_val: f64, mut high_val: f64) -> Option<f64> {
+/// Find the root of an equation given values bracketing a root. Used when finding wet bulb
+/// temperature among other functions.
+fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut a: f64, mut b: f64) -> Option<f64> {
     use std::f64;
     const MAX_IT: usize = 50;
-    const EPS: f64 = 1.0e-10;
+    const EPS: f64 = 1.0e-9;
 
-    if low_val > high_val {
-        ::std::mem::swap(&mut low_val, &mut high_val);
+    if a > b {
+        ::std::mem::swap(&mut a, &mut b);
     }
 
-    let mut f_low = f(low_val)?;
-    let f_high = f(high_val)?;
+    let mut fa = f(a)?;
+    let mut fb = f(b)?;
 
     // Check to make sure we have bracketed a root.
-    if f_high * f_low > 0.0 {
+    if fa * fb > 0.0 {
         return None;
     }
 
-    let mut mid_val = (high_val - low_val) / 2.0 + low_val;
-    let mut f_mid = f(mid_val)?;
+    let mut c = b;
+    let mut fc = fb;
+    let mut d = 0.0;
+    let mut e = 0.0;
     for _ in 0..MAX_IT {
-        if f_mid * f_low > 0.0 {
-            low_val = mid_val;
-            f_low = f_mid;
+        if (fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0) {
+            c = a;
+            fc = fa;
+            d = b - a;
+            e = d;
+        }
+        if fc.abs() < fa.abs() {
+            a = b;
+            b = c;
+            c = a;
+            fa = fb;
+            fb = fc;
+            fc = fa;
+        }
+
+        let tol1 = 2.0 * EPS * b.abs() + 0.5 * EPS;
+        let xm = 0.5 * (c - b);
+        if xm.abs() <= tol1 || fb == 0.0 {
+            return Some(b);
+        }
+        if e.abs() >= tol1 && fa.abs() > fb.abs() {
+            let s = fb / fa;
+            let (mut p, mut q) = if a == c {
+                let p = 2.0 * xm * s;
+                let q = 1.0 - s;
+                (p, q)
+            } else {
+                let mut q = fa / fc;
+                let r = fb / fc;
+                let p = s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0));
+                q = (q - 1.0) * (r - 1.0) * (s - 1.0);
+                (p, q)
+            };
+
+            if p > 0.0 {
+                q = -q;
+            }
+
+            p = p.abs();
+
+            let min1 = 3.0 * xm * q - (tol1 * q).abs();
+            let min2 = (e * q).abs();
+
+            if 2.0 * p < min1.min(min2) {
+                e = d;
+                d = p / q;
+            } else {
+                d = xm;
+                e = d;
+            }
         } else {
-            high_val = mid_val;
+            d = xm;
+            e = d;
         }
-
-        if (high_val - low_val).abs() < EPS {
-            break;
+        a = b;
+        fa = fb;
+        if d.abs() > tol1 {
+            b += d;
+        } else {
+            b += if xm > 0.0 { tol1.abs() } else { -(tol1.abs()) };
         }
-
-        mid_val = (high_val - low_val) / 2.0 + low_val;
-        f_mid = f(mid_val)?;
+        fb = f(b)?;
     }
 
-    Some(mid_val)
+    None
 }
 
 #[cfg(test)]
@@ -866,7 +916,7 @@ mod test {
                         t_back,
                         (t.unwrap() - t_back.unwrap()).abs()
                     );
-                    assert!(approx_equal(t, t_back, CelsiusDiff(1.0e-7)));
+                    assert!(approx_equal(t, t_back, CelsiusDiff(1.0e-6)));
                 }
             }
         }
@@ -929,12 +979,12 @@ mod test {
         assert!(approx_equal(
             1.0,
             find_root(&|x| Some(x * x - 1.0), 2.0, 0.0).unwrap(),
-            1.0e-10
+            1.0e-8
         ));
         assert!(approx_equal(
             -1.0,
             find_root(&|x| Some(x * x - 1.0), -2.0, 0.0).unwrap(),
-            1.0e-10
+            1.0e-8
         ));
     }
 }
