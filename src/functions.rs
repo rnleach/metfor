@@ -15,7 +15,7 @@ macro_rules! debug_validate {
 ///
 /// Returns: Potential temperature.
 #[inline]
-pub fn theta<P, T>(pressure: P, temperature: T) -> Kelvin
+pub fn potential_temperature<P, T>(pressure: P, temperature: T) -> Kelvin
 where
     P: Pressure,
     T: Temperature,
@@ -40,7 +40,7 @@ where
 ///
 /// Returns: The temperature.
 #[inline]
-pub fn temperature_from_theta<P, T>(theta: T, pressure: P) -> Kelvin
+pub fn temperature_from_pot_temp<P, T>(theta: T, pressure: P) -> Kelvin
 where
     P: Pressure,
     T: Temperature,
@@ -75,7 +75,7 @@ const MAX_T_VP_LIQUID: Celsius = Celsius(50.0);
 ///
 /// Returns: The vapor pressure of water vapor.
 #[inline]
-pub fn vapor_pressure_liquid_water<T>(dew_point: T) -> Option<HectoPascal>
+pub fn vapor_pressure_water<T>(dew_point: T) -> Option<HectoPascal>
 where
     T: Temperature + PartialOrd<Celsius>,
     Celsius: From<T>,
@@ -100,7 +100,7 @@ where
 ///
 /// Returns: The dew point.
 #[inline]
-pub fn dew_point_from_vapor_pressure_over_liquid<P>(vp: P) -> Option<Celsius>
+pub fn dew_point_from_vapor_pressure_water<P>(vp: P) -> Option<Celsius>
 where
     P: Pressure,
     HectoPascal: From<P>,
@@ -189,10 +189,7 @@ where
     let t = Celsius::from(temperature);
     let dp = Celsius::from(dew_point);
 
-    let (HectoPascal(es), HectoPascal(e)) = (
-        vapor_pressure_liquid_water(t)?,
-        vapor_pressure_liquid_water(dp)?,
-    );
+    let (HectoPascal(es), HectoPascal(e)) = (vapor_pressure_water(t)?, vapor_pressure_water(dp)?);
 
     let rh_val = e / es;
 
@@ -217,10 +214,7 @@ where
     let t = Celsius::from(temperature);
     let fp = Celsius::from(frost_point);
 
-    let (HectoPascal(es), HectoPascal(e)) = (
-        vapor_pressure_liquid_water(t)?,
-        vapor_pressure_liquid_water(fp)?,
-    );
+    let (HectoPascal(es), HectoPascal(e)) = (vapor_pressure_water(t)?, vapor_pressure_water(fp)?);
 
     let rh_val = e / es;
 
@@ -249,7 +243,7 @@ where
     let dp = Celsius::from(dew_point);
     let HectoPascal(p) = HectoPascal::from(pressure);
 
-    let HectoPascal(vp) = vapor_pressure_liquid_water::<Celsius>(dp)?;
+    let HectoPascal(vp) = vapor_pressure_water::<Celsius>(dp)?;
     if vp > p {
         None
     } else {
@@ -273,7 +267,7 @@ where
     let HectoPascal(p) = HectoPascal::from(pressure);
 
     let vp = HectoPascal(mw * p / (mw + epsilon));
-    dew_point_from_vapor_pressure_over_liquid::<HectoPascal>(vp)
+    dew_point_from_vapor_pressure_water::<HectoPascal>(vp)
 }
 
 /// Calculate the temperature and pressure at the lifting condensation level (LCL).
@@ -305,8 +299,10 @@ where
     let p = HectoPascal::from(pressure);
 
     let plcl = pressure_at_lcl::<Celsius, Celsius, HectoPascal>(t, dp, p)?;
-    let tlcl =
-        temperature_from_theta::<HectoPascal, Kelvin>(theta::<HectoPascal, Celsius>(p, t), plcl);
+    let tlcl = temperature_from_pot_temp::<HectoPascal, Kelvin>(
+        potential_temperature::<HectoPascal, Celsius>(p, t),
+        plcl,
+    );
 
     debug_validate!(plcl, tlcl);
 
@@ -338,13 +334,13 @@ where
     if dp >= t {
         Some(p)
     } else {
-        let theta = theta::<HectoPascal, Celsius>(p, t);
+        let theta = potential_temperature::<HectoPascal, Celsius>(p, t);
         let mw = mixing_ratio::<Celsius, HectoPascal>(dp, p)?;
-        let theta_e = theta_e::<_, _, HectoPascal>(t, dp, p)?;
+        let theta_e = equiv_pot_temperature::<_, _, HectoPascal>(t, dp, p)?;
 
         let eq = |p: f64| -> Option<f64> {
             let p = HectoPascal(p);
-            let Kelvin(t) = temperature_from_theta::<HectoPascal, Kelvin>(theta, p);
+            let Kelvin(t) = temperature_from_pot_temp::<HectoPascal, Kelvin>(theta, p);
             let Kelvin(dp) = Kelvin::from(dew_point_from_p_and_mw::<HectoPascal>(p, mw)?);
 
             Some(t - dp)
@@ -355,11 +351,12 @@ where
 
         let eq = |p: f64| -> Option<f64> {
             let p = HectoPascal(p);
-            let Kelvin(t1) = temperature_from_theta::<HectoPascal, Kelvin>(theta, p);
-            let Kelvin(t2) = Kelvin::from(temperature_from_theta_e_saturated_and_pressure::<
-                HectoPascal,
-                Kelvin,
-            >(p, theta_e)?);
+            let Kelvin(t1) = temperature_from_pot_temp::<HectoPascal, Kelvin>(theta, p);
+            let Kelvin(t2) =
+                Kelvin::from(temperature_from_equiv_pot_temp_saturated_and_pressure::<
+                    HectoPascal,
+                    Kelvin,
+                >(p, theta_e)?);
 
             Some(t1 - t2)
         };
@@ -400,7 +397,7 @@ where
 
     let dp = Celsius::from(dew_point);
     let p = HectoPascal::from(pressure).into_option()?;
-    let HectoPascal(vp) = vapor_pressure_liquid_water::<Celsius>(dp)?;
+    let HectoPascal(vp) = vapor_pressure_water::<Celsius>(dp)?;
 
     if vp > p {
         None
@@ -422,7 +419,7 @@ where
 ///
 /// Returns: The equivalent potential temperature.
 #[inline]
-pub fn theta_e<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Option<Kelvin>
+pub fn equiv_pot_temperature<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Option<Kelvin>
 where
     T: Temperature,
     DP: Temperature,
@@ -440,7 +437,7 @@ where
 
     const P0: f64 = 1000.0; // Reference pressure for potential temperatures.
     let rv = mixing_ratio::<Celsius, HectoPascal>(dp, p)?;
-    let pd = naked_p - vapor_pressure_liquid_water::<Celsius>(dp)?.into_option()?;
+    let pd = naked_p - vapor_pressure_water::<Celsius>(dp)?.into_option()?;
 
     if pd < 0.0 {
         return None;
@@ -470,7 +467,7 @@ where
 ///
 /// Returns: The temperature.
 #[inline]
-pub fn temperature_from_theta_e_saturated_and_pressure<P, T>(
+pub fn temperature_from_equiv_pot_temp_saturated_and_pressure<P, T>(
     pressure: P,
     theta_e_val: T,
 ) -> Option<Celsius>
@@ -488,7 +485,8 @@ where
     find_root(
         &|t_c| {
             let t = Celsius(t_c);
-            let Kelvin(theta_e_calc) = theta_e::<Celsius, Celsius, HectoPascal>(t, t, p)?;
+            let Kelvin(theta_e_calc) =
+                equiv_pot_temperature::<Celsius, Celsius, HectoPascal>(t, t, p)?;
             Some(theta_e_calc - theta_e_k)
         },
         -80.0,
@@ -520,12 +518,12 @@ where
 
     let (p_lcl, t_lcl) = pressure_and_temperature_at_lcl::<_, _, HectoPascal>(t, dp, p)?;
 
-    let Kelvin(theta_e_val) = theta_e::<_, _, HectoPascal>(t_lcl, t_lcl, p_lcl)?;
+    let Kelvin(theta_e_val) = equiv_pot_temperature::<_, _, HectoPascal>(t_lcl, t_lcl, p_lcl)?;
 
     find_root(
         &|t_c| {
             let t_c = Celsius(t_c);
-            let Kelvin(theta_e_calc) = theta_e::<_, _, HectoPascal>(t_c, t_c, p)?;
+            let Kelvin(theta_e_calc) = equiv_pot_temperature::<_, _, HectoPascal>(t_c, t_c, p)?;
 
             Some(theta_e_calc - theta_e_val)
         },
@@ -585,9 +583,9 @@ where
     let p = HectoPascal::from(pressure);
 
     let rv = mixing_ratio::<Celsius, HectoPascal>(dp, p)?;
-    let Kelvin(t_k) = theta::<HectoPascal, Celsius>(p, t);
+    let Kelvin(t_k) = potential_temperature::<HectoPascal, Celsius>(p, t);
     let vt_k = Kelvin(t_k * (1.0 + rv / epsilon) / (1.0 + rv));
-    Some(temperature_from_theta::<HectoPascal, _>(vt_k, p))
+    Some(temperature_from_pot_temp::<HectoPascal, _>(vt_k, p))
 }
 
 /// Find the root of an equation given values bracketing a root. Used when finding wet bulb
@@ -683,7 +681,7 @@ mod test {
     fn test_theta_kelvin() {
         for celsius in temperatures() {
             let kelvin = Kelvin::from(celsius);
-            let theta = theta(HectoPascal(1000.0), celsius);
+            let theta = potential_temperature(HectoPascal(1000.0), celsius);
             assert!(approx_equal(kelvin, theta, CelsiusDiff(TOL)));
         }
     }
@@ -692,7 +690,7 @@ mod test {
     fn test_temperature_c_from_theta() {
         for celsius in temperatures() {
             let kelvin = Kelvin::from(celsius);
-            let back_to_celsius = temperature_from_theta(kelvin, HectoPascal(1000.0));
+            let back_to_celsius = temperature_from_pot_temp(kelvin, HectoPascal(1000.0));
 
             assert!(approx_equal(celsius, back_to_celsius, CelsiusDiff(TOL)));
         }
@@ -702,8 +700,8 @@ mod test {
     fn test_temperature_c_from_theta_and_back_by_theta_kelvin() {
         for p in pressure_levels() {
             for celsius in temperatures() {
-                let theta = theta(p, celsius);
-                let back_to_celsius = Celsius::from(temperature_from_theta(theta, p));
+                let theta = potential_temperature(p, celsius);
+                let back_to_celsius = Celsius::from(temperature_from_pot_temp(theta, p));
                 assert!(approx_equal(celsius, back_to_celsius, CelsiusDiff(TOL)));
             }
         }
@@ -717,8 +715,8 @@ mod test {
         .iter()
         .map(|&dp| Celsius(dp))
         {
-            let forward = vapor_pressure_liquid_water(dp).unwrap();
-            let back = dew_point_from_vapor_pressure_over_liquid(forward).unwrap();
+            let forward = vapor_pressure_water(dp).unwrap();
+            let back = dew_point_from_vapor_pressure_water(forward).unwrap();
             assert!(approx_equal(dp, back, CelsiusDiff(TOL)));
         }
     }
@@ -769,7 +767,7 @@ mod test {
     fn test_mixing_ratio() {
         for p in pressure_levels() {
             for dp in temperatures() {
-                if let Some(vp) = vapor_pressure_liquid_water(dp) {
+                if let Some(vp) = vapor_pressure_water(dp) {
                     if vp >= p {
                         continue;
                     }
@@ -862,9 +860,9 @@ mod test {
         for p in pressure_levels() {
             for t in temperatures() {
                 for dp in temperatures() {
-                    match theta_e(t, dp, p) {
+                    match equiv_pot_temperature(t, dp, p) {
                         Some(theta_e) => {
-                            let theta = theta(p, t);
+                            let theta = potential_temperature(p, t);
                             assert!(theta <= theta_e);
                         }
                         None => { /* Ignore forwarded errors. */ }
@@ -879,9 +877,11 @@ mod test {
         for p in pressure_levels() {
             for t in temperatures() {
                 for dp in temperatures().filter(|dp| *dp <= t) {
-                    if let Some((theta, theta_e, theta_es)) = theta_e(t, dp, p)
-                        .and_then(|theta_e_val| Some((theta_e_val, theta_e(t, t, p)?)))
-                        .and_then(|pair| Some((theta(p, t), pair.0, pair.1)))
+                    if let Some((theta, theta_e, theta_es)) = equiv_pot_temperature(t, dp, p)
+                        .and_then(|theta_e_val| {
+                            Some((theta_e_val, equiv_pot_temperature(t, t, p)?))
+                        })
+                        .and_then(|pair| Some((potential_temperature(p, t), pair.0, pair.1)))
                     {
                         println!("{:?} <= {:?} <= {:?}", theta, theta_e, theta_es);
                         assert!(
@@ -898,8 +898,8 @@ mod test {
     fn test_theta_e_saturated_there_and_back() {
         for p in pressure_levels() {
             for t in temperatures() {
-                if let Some(t_back) = theta_e(t, t, p).and_then(|theta_es| {
-                    temperature_from_theta_e_saturated_and_pressure(p, theta_es)
+                if let Some(t_back) = equiv_pot_temperature(t, t, p).and_then(|theta_es| {
+                    temperature_from_equiv_pot_temp_saturated_and_pressure(p, theta_es)
                 }) {
                     println!(
                         "{:?} {:?} {:?}",

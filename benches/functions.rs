@@ -8,7 +8,7 @@ use metfor::*;
 
 criterion_main!(
     find_root_benches,
-    potential_temperature,
+    potential_temperature_benches,
     vapor_pressure_liquid,
     vapor_pressure_ice_benches,
     theta_e_benches
@@ -37,7 +37,7 @@ fn temperature_from_theta_e_saturated_and_pressure_bench(c: &mut Criterion) {
         b.iter(|| {
             for p in &pressures {
                 for theta_e in &theta_es {
-                    temperature_from_theta_e_saturated_and_pressure(
+                    temperature_from_equiv_pot_temp_saturated_and_pressure(
                         black_box(*p),
                         black_box(*theta_e),
                     );
@@ -116,24 +116,24 @@ fn wet_bulb_bench(c: &mut Criterion) {
  *************************************************************************************************/
 criterion_group!(
     theta_e_benches,
-    theta_e_bench,
+    equiv_pot_temperature_bench,
     latent_heat_of_condensation_bench,
     virtual_temperature_bench
 );
 
-fn theta_e_bench(c: &mut Criterion) {
+fn equiv_pot_temperature_bench(c: &mut Criterion) {
     let pressures: Vec<_> = (700..1101)
         .step_by(100)
         .map(|i| HectoPascal(i as f64))
         .collect();
     let temperatures: Vec<_> = (-40..41).step_by(10).map(|i| Celsius(i as f64)).collect();
 
-    c.bench_function("theta_e", |b| {
+    c.bench_function("equiv_pot_temperature", |b| {
         b.iter(|| {
             for p in &pressures {
                 for t in &temperatures {
                     for dp in temperatures.iter().filter(|dp| *dp <= t) {
-                        theta_e(black_box(*t), black_box(*dp), black_box(*p));
+                        equiv_pot_temperature(black_box(*t), black_box(*dp), black_box(*p));
                     }
                 }
             }
@@ -229,8 +229,8 @@ fn vapor_pressure_ice_bench(c: &mut Criterion) {
  *************************************************************************************************/
 criterion_group!(
     vapor_pressure_liquid,
-    vapor_pressure_liquid_water_bench,
-    dew_point_from_vapor_pressure_over_liquid_bench,
+    vapor_pressure_water_bench,
+    dew_point_from_vapor_pressure_water_bench,
     rh_bench,
     mixing_ratio_bench,
     dew_point_from_p_and_mw_bench,
@@ -302,28 +302,28 @@ fn rh_bench(c: &mut Criterion) {
     });
 }
 
-fn dew_point_from_vapor_pressure_over_liquid_bench(c: &mut Criterion) {
+fn dew_point_from_vapor_pressure_water_bench(c: &mut Criterion) {
     let vps: Vec<_> = (0..121)
         .step_by(10)
         .map(|i| HectoPascal(i as f64))
         .collect();
 
-    c.bench_function("dew_point_from_vapor_pressure_over_liquid", |b| {
+    c.bench_function("dew_point_from_vapor_pressure_water", |b| {
         b.iter(|| {
             for vp in &vps {
-                dew_point_from_vapor_pressure_over_liquid(black_box(*vp));
+                dew_point_from_vapor_pressure_water(black_box(*vp));
             }
         })
     });
 }
 
-fn vapor_pressure_liquid_water_bench(c: &mut Criterion) {
+fn vapor_pressure_water_bench(c: &mut Criterion) {
     let dps: Vec<_> = (-90..61).step_by(10).map(|i| Celsius(i as f64)).collect();
 
-    c.bench_function("vapor_pressure_liquid_water", |b| {
+    c.bench_function("vapor_pressure_water", |b| {
         b.iter(|| {
             for dew_point in &dps {
-                vapor_pressure_liquid_water(black_box(*dew_point));
+                vapor_pressure_water(black_box(*dew_point));
             }
         })
     });
@@ -333,7 +333,7 @@ fn vapor_pressure_liquid_water_bench(c: &mut Criterion) {
  *                                          Theta Group
  *************************************************************************************************/
 criterion_group!(
-    potential_temperature,
+    potential_temperature_benches,
     theta_bench,
     temperature_from_theta_bench
 );
@@ -345,11 +345,11 @@ fn theta_bench(c: &mut Criterion) {
         .collect();
     let temperatures: Vec<_> = (-40..41).step_by(10).map(|i| Celsius(i as f64)).collect();
 
-    c.bench_function("theta", |b| {
+    c.bench_function("potential_temperature", |b| {
         b.iter(|| {
             for p in &pressures {
                 for t in &temperatures {
-                    theta(black_box(*p), black_box(*t));
+                    potential_temperature(black_box(*p), black_box(*t));
                 }
             }
         })
@@ -363,11 +363,11 @@ fn temperature_from_theta_bench(c: &mut Criterion) {
         .collect();
     let thetas: Vec<_> = (250..331).step_by(10).map(|i| Kelvin(i as f64)).collect();
 
-    c.bench_function("temperature_from_theta", |b| {
+    c.bench_function("temperature_from_pot_temp", |b| {
         b.iter(|| {
             for p in &pressures {
                 for t in &thetas {
-                    theta(black_box(*p), black_box(*t));
+                    temperature_from_pot_temp(black_box(*t), black_box(*p));
                 }
             }
         })

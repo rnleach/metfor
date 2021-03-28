@@ -25,15 +25,15 @@ the newtypes in this crate to be used in the same manner as an `f64` is with `op
 
 # Examples
 ```
-use metfor::{Kelvin, Celsius, HectoPascal, Millibar, theta};
+use metfor::{Kelvin, Celsius, HectoPascal, Millibar, potential_temperature};
 
 let t1 = Kelvin(300.0);
 let p1 = HectoPascal(1000.0);
-let theta1 = theta(p1, t1);
+let theta1 = potential_temperature(p1, t1);
 
 let t2 = Celsius(0.0);
 let p2 = Millibar(700.0);
-let theta2 = theta(p2, t2);
+let theta2 = potential_temperature(p2, t2);
 
 println!("theta1 = {:?} and theta2 = {:?}", theta1, theta2);
 
