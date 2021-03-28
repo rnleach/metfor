@@ -304,7 +304,7 @@ where
     let dp = Celsius::from(dew_point);
     let p = HectoPascal::from(pressure);
 
-    let plcl = pressure_hpa_at_lcl::<Celsius, Celsius, HectoPascal>(t, dp, p)?;
+    let plcl = pressure_at_lcl::<Celsius, Celsius, HectoPascal>(t, dp, p)?;
     let tlcl =
         temperature_from_theta::<HectoPascal, Kelvin>(theta::<HectoPascal, Celsius>(p, t), plcl);
 
@@ -321,11 +321,7 @@ where
 ///
 /// Returns: The pressure at the LCL.
 #[inline]
-pub fn pressure_hpa_at_lcl<T, DP, P>(
-    temperature: T,
-    dew_point: DP,
-    pressure: P,
-) -> Option<HectoPascal>
+pub fn pressure_at_lcl<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Option<HectoPascal>
 where
     T: Temperature,
     DP: Temperature,
@@ -797,7 +793,7 @@ mod test {
         for p in pressure_levels() {
             for t in temperatures() {
                 for dp in temperatures().filter(|dp| *dp <= t) {
-                    match pressure_hpa_at_lcl(t, dp, p) {
+                    match pressure_at_lcl(t, dp, p) {
                         Some(p_lcl) => {
                             assert!(p_lcl <= p);
                             p_lcl.unwrap();
