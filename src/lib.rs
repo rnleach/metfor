@@ -1,6 +1,7 @@
 #![doc(test(attr(deny(warnings))))]
 #![warn(missing_docs)]
 /*!
+![Github Actions](https://github.com/rnleach/metfor/actions/workflows/rust.yml/badge.svg)
 
 Meteorological constants and formulas.
 

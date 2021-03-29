@@ -1,10 +1,6 @@
-[![Build Status](https://travis-ci.org/rnleach/metfor.svg?branch=master)](https://travis-ci.org/rnleach/metfor)
-[![Build status](https://ci.appveyor.com/api/projects/status/aqsy0e5n90mw3lwh/branch/master?svg=true)](https://ci.appveyor.com/project/rnleach/metfor/branch/master)
-[![Latest Version](https://img.shields.io/crates/v/metfor.svg)](https://crates.io/crates/metfor)
-[![docs](https://docs.rs/metfor/badge.svg)](https://docs.rs/metfor)
-
 # metfor
 
+![Github Actions](https://github.com/rnleach/metfor/actions/workflows/rust.yml/badge.svg)
 
 Meteorological constants and formulas.
 
@@ -29,15 +25,15 @@ the newtypes in this crate to be used in the same manner as an `f64` is with `op
 
 ## Examples
 ```rust
-use metfor::{Kelvin, Celsius, HectoPascal, Millibar, theta};
+use metfor::{Kelvin, Celsius, HectoPascal, Millibar, potential_temperature};
 
 let t1 = Kelvin(300.0);
 let p1 = HectoPascal(1000.0);
-let theta1 = theta(p1, t1);
+let theta1 = potential_temperature(p1, t1);
 
 let t2 = Celsius(0.0);
 let p2 = Millibar(700.0);
-let theta2 = theta(p2, t2);
+let theta2 = potential_temperature(p2, t2);
 
 println!("theta1 = {:?} and theta2 = {:?}", theta1, theta2);
 
