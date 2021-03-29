@@ -1,6 +1,6 @@
 # metfor
 
-![Github Actions](https://github.com/rnleach/metfor/actions/workflows/rust.yml/badge.svg)
+[![Github Actions](https://github.com/rnleach/metfor/actions/workflows/rust.yml/badge.svg)](https://github.com/rnleach/metfor/actions)
 
 Meteorological constants and formulas.
 
