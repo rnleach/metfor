@@ -252,7 +252,7 @@ where
 }
 
 /// Given a mixing ratio and pressure, calculate the dew point temperature. If saturation is
-/// assumed this is also the temperature.
+/// assumed, this is also the temperature.
 ///
 /// Returns: The dew point.
 #[inline]
@@ -267,6 +267,53 @@ where
     let HectoPascal(p) = HectoPascal::from(pressure);
 
     let vp = HectoPascal(mw * p / (mw + epsilon));
+    dew_point_from_vapor_pressure_water::<HectoPascal>(vp)
+}
+
+/// Calculate the specific humidity.
+///
+/// Eqs 5.11 and 5.12 from "Weather Analysis" by Dus&#780;an Dujric&#769;
+///
+/// * `dew_point` - the dew point, if this is the same as the temperature then this
+///                 calculates the saturation specific humidity.
+/// * `pressure` - the pressure in hPa.
+///
+/// Returns the specific humidity. (no units)
+#[inline]
+pub fn specific_humidity<DP, P>(dew_point: DP, pressure: P) -> Option<f64>
+where
+    DP: Temperature,
+    P: Pressure,
+    Celsius: From<DP>,
+    HectoPascal: From<P>,
+{
+    debug_validate!(dew_point, pressure);
+
+    let dp = Celsius::from(dew_point);
+    let p = HectoPascal::from(pressure).into_option()?;
+    let HectoPascal(vp) = vapor_pressure_water::<Celsius>(dp)?;
+
+    if vp > p {
+        None
+    } else {
+        Some(vp / p * epsilon)
+    }
+}
+
+/// Given a specific humidity and pressure, calculate the dew point temperature. If saturation is
+/// assumed, this is also the temperature.
+#[inline]
+pub fn dew_point_from_p_and_specific_humidity<P>(pressure: P, q: f64) -> Option<Celsius>
+where
+    P: Pressure,
+    HectoPascal: From<P>,
+{
+    debug_validate!(pressure);
+    debug_assert!(q >= 0.0);
+
+    let HectoPascal(p) = HectoPascal::from(pressure);
+
+    let vp = HectoPascal(q * p / epsilon);
     dew_point_from_vapor_pressure_water::<HectoPascal>(vp)
 }
 
@@ -373,36 +420,6 @@ where
         debug_validate!(lclp);
 
         Some(lclp)
-    }
-}
-
-/// Calculate the specific humidity.
-///
-/// Eqs 5.11 and 5.12 from "Weather Analysis" by Dus&#780;an Dujric&#769;
-///
-/// * `dew_point` - the dew point, if this is the same as the temperature then this
-///                 calculates the saturation specific humidity.
-/// * `pressure` - the pressure in hPa.
-///
-/// Returns the specific humidity. (no units)
-#[inline]
-pub fn specific_humidity<DP, P>(dew_point: DP, pressure: P) -> Option<f64>
-where
-    DP: Temperature,
-    P: Pressure,
-    Celsius: From<DP>,
-    HectoPascal: From<P>,
-{
-    debug_validate!(dew_point, pressure);
-
-    let dp = Celsius::from(dew_point);
-    let p = HectoPascal::from(pressure).into_option()?;
-    let HectoPascal(vp) = vapor_pressure_water::<Celsius>(dp)?;
-
-    if vp > p {
-        None
-    } else {
-        Some(vp / p * epsilon)
     }
 }
 
@@ -850,6 +867,30 @@ mod test {
             for dp in temperatures() {
                 if let Some(sh) = specific_humidity(dp, p) {
                     assert!(sh > 0.0 && sh <= 1.0);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_specific_humidity_and_back_by_dew_point_from_p_and_specific_humidity() {
+        for press in pressure_levels() {
+            for dp in temperatures() {
+                let q = specific_humidity(dp, press);
+
+                match q {
+                    Some(q) => {
+                        if let Some(back) = dew_point_from_p_and_specific_humidity(press, q) {
+                            println!(
+                                "{:?} == {:?} with tolerance <= {:?}",
+                                dp,
+                                back,
+                                f64::abs(dp.unwrap() - back.unwrap())
+                            );
+                            assert!(approx_equal(dp, back, CelsiusDiff(1.0e-2)));
+                        }
+                    }
+                    None => { /* Ignore this for now.*/ }
                 }
             }
         }
