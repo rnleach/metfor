@@ -89,6 +89,16 @@ macro_rules! implQuantity {
             }
         }
 
+        impl optional::Noned for $t {
+            fn is_none(&self) -> bool {
+                self.0.is_none()
+            }
+
+            fn get_none() -> Self {
+                $t(std::f64::NAN)
+            }
+        }
+
         implOpsForQuantity!($t);
     };
 }

@@ -1,5 +1,5 @@
-use crate::constants::*;
-use crate::types::*;
+use crate::{constants::*, types::*};
+use optional::{some, none, Optioned};
 
 macro_rules! debug_validate {
     ($($val:expr),+) => (
@@ -75,7 +75,7 @@ const MAX_T_VP_LIQUID: Celsius = Celsius(50.0);
 ///
 /// Returns: The vapor pressure of water vapor.
 #[inline]
-pub fn vapor_pressure_water<T>(dew_point: T) -> Option<HectoPascal>
+pub fn vapor_pressure_water<T>(dew_point: T) -> Optioned<HectoPascal>
 where
     T: Temperature + PartialOrd<Celsius>,
     Celsius: From<T>,
@@ -83,7 +83,7 @@ where
     debug_validate!(dew_point);
 
     if dew_point < MIN_T_VP_LIQUID || dew_point > MAX_T_VP_LIQUID {
-        None
+        none()
     } else {
         let Celsius(dp) = Celsius::from(dew_point);
         let vp = 6.1037 * f64::exp(17.641 * dp / (dp + 243.27));
@@ -91,7 +91,7 @@ where
 
         debug_validate!(vp);
 
-        Some(vp)
+        some(vp)
     }
 }
 
@@ -100,7 +100,7 @@ where
 ///
 /// Returns: The dew point.
 #[inline]
-pub fn dew_point_from_vapor_pressure_water<P>(vp: P) -> Option<Celsius>
+pub fn dew_point_from_vapor_pressure_water<P>(vp: P) -> Optioned<Celsius>
 where
     P: Pressure,
     HectoPascal: From<P>,
@@ -112,9 +112,9 @@ where
     let dp = a * 243.27 / (1.0 - a);
     let dp = Celsius(dp);
     if dp < MIN_T_VP_LIQUID || dp > MAX_T_VP_LIQUID {
-        None
+        none()
     } else {
-        Some(dp)
+        some(dp)
     }
 }
 
@@ -125,7 +125,7 @@ where
 ///
 /// Returns: The vapor pressure of water vapor.
 #[inline]
-pub fn vapor_pressure_ice<T>(frost_point: T) -> Option<HectoPascal>
+pub fn vapor_pressure_ice<T>(frost_point: T) -> Optioned<HectoPascal>
 where
     T: Temperature + PartialOrd,
     Celsius: From<T>,
@@ -136,14 +136,14 @@ where
     // should not need unpack calls below, should be able to do this as temperatures but compiler
     // can't handle the type inference, even with help. rustc --version = 1.30.1
     if fp < MIN_T_VP_ICE.unpack() || fp > MAX_T_VP_ICE.unpack() {
-        None
+        none()
     } else {
         let vp = 6.1121 * f64::exp(22.587 * fp / (fp + 273.86));
         let vp = HectoPascal(vp);
 
         debug_validate!(vp);
 
-        Some(vp)
+        some(vp)
     }
 }
 
@@ -152,7 +152,7 @@ where
 ///
 /// Returns: The frost point.
 #[inline]
-pub fn frost_point_from_vapor_pressure_over_ice<P>(vp: P) -> Option<Celsius>
+pub fn frost_point_from_vapor_pressure_over_ice<P>(vp: P) -> Optioned<Celsius>
 where
     P: Pressure,
     HectoPascal: From<P>,
@@ -168,9 +168,9 @@ where
     debug_validate!(fp);
 
     if fp < MIN_T_VP_ICE || fp > MAX_T_VP_ICE {
-        None
+        none()
     } else {
-        Some(fp)
+        some(fp)
     }
 }
 
@@ -178,7 +178,7 @@ where
 ///
 /// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
 #[inline]
-pub fn rh<T1, T2>(temperature: T1, dew_point: T2) -> Option<f64>
+pub fn rh<T1, T2>(temperature: T1, dew_point: T2) -> Optioned<f64>
 where
     T1: Temperature,
     T2: Temperature,
@@ -189,21 +189,24 @@ where
     let t = Celsius::from(temperature);
     let dp = Celsius::from(dew_point);
 
-    let (HectoPascal(es), HectoPascal(e)) = (vapor_pressure_water(t)?, vapor_pressure_water(dp)?);
+    let (HectoPascal(es), HectoPascal(e)) = match (vapor_pressure_water(t).into_option(), vapor_pressure_water(dp).into_option()){
+        (Some(es), Some(e)) => (es, e),
+        _ => return none(),
+    };
 
     let rh_val = e / es;
 
     debug_assert!(rh_val >= 0.0);
 
     // Allow e > es for supersaturation.
-    Some(rh_val)
+    some(rh_val)
 }
 
 /// Calculate the relative humidity with respect to ice.
 ///
 /// Returns: The relative humidity as a decimal, i.e. 0.95 instead of 95%.
 #[inline]
-pub fn rh_ice<T1, T2>(temperature: T1, frost_point: T2) -> Option<f64>
+pub fn rh_ice<T1, T2>(temperature: T1, frost_point: T2) -> Optioned<f64>
 where
     T1: Temperature,
     T2: Temperature,
@@ -214,14 +217,18 @@ where
     let t = Celsius::from(temperature);
     let fp = Celsius::from(frost_point);
 
-    let (HectoPascal(es), HectoPascal(e)) = (vapor_pressure_water(t)?, vapor_pressure_water(fp)?);
+    let (HectoPascal(es), HectoPascal(e)) = match (vapor_pressure_water(t).into_option(), vapor_pressure_water(fp).into_option()){
+        (Some(es), Some(e)) => (es, e),
+        _ => return none(),
+    };
+
 
     let rh_val = e / es;
 
     debug_assert!(rh_val >= 0.0);
 
     // Allow e > es for supersaturation.
-    Some(rh_val)
+    some(rh_val)
 }
 
 /// Calculate the mixing ratio of water.
@@ -231,7 +238,7 @@ where
 /// Returns: The mixing ratio as a unitless value. Note this is often reported as g/kg, but this
 ///          function returns kg/kg.
 #[inline]
-pub fn mixing_ratio<T, P>(dew_point: T, pressure: P) -> Option<f64>
+pub fn mixing_ratio<T, P>(dew_point: T, pressure: P) -> Optioned<f64>
 where
     T: Temperature,
     Celsius: From<T>,
@@ -243,11 +250,15 @@ where
     let dp = Celsius::from(dew_point);
     let HectoPascal(p) = HectoPascal::from(pressure);
 
-    let HectoPascal(vp) = vapor_pressure_water::<Celsius>(dp)?;
+    let HectoPascal(vp) = match vapor_pressure_water::<Celsius>(dp).into_option(){
+        Some(vp) => vp,
+        None => return none(),
+    };
+
     if vp > p {
-        None
+        none()
     } else {
-        Some(epsilon * vp / (p - vp))
+        some(epsilon * vp / (p - vp))
     }
 }
 
@@ -256,7 +267,7 @@ where
 ///
 /// Returns: The dew point.
 #[inline]
-pub fn dew_point_from_p_and_mw<P>(pressure: P, mw: f64) -> Option<Celsius>
+pub fn dew_point_from_p_and_mw<P>(pressure: P, mw: f64) -> Optioned<Celsius>
 where
     P: Pressure,
     HectoPascal: From<P>,
@@ -298,7 +309,8 @@ where
     let dp = Celsius::from(dew_point);
     let p = HectoPascal::from(pressure);
 
-    let plcl = pressure_at_lcl::<Celsius, Celsius, HectoPascal>(t, dp, p)?;
+    let plcl = pressure_at_lcl::<Celsius, Celsius, HectoPascal>(t, dp, p).into_option()?;
+
     let tlcl = temperature_from_pot_temp::<HectoPascal, Kelvin>(
         potential_temperature::<HectoPascal, Celsius>(p, t),
         plcl,
@@ -317,7 +329,7 @@ where
 ///
 /// Returns: The pressure at the LCL.
 #[inline]
-pub fn pressure_at_lcl<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Option<HectoPascal>
+pub fn pressure_at_lcl<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Optioned<HectoPascal>
 where
     T: Temperature,
     DP: Temperature,
@@ -332,37 +344,53 @@ where
     let p = HectoPascal::from(pressure);
 
     if dp >= t {
-        Some(p)
+        some(p)
     } else {
         let theta = potential_temperature::<HectoPascal, Celsius>(p, t);
-        let mw = mixing_ratio::<Celsius, HectoPascal>(dp, p)?;
-        let theta_e = equiv_pot_temperature::<_, _, HectoPascal>(t, dp, p)?;
+        let mw = match mixing_ratio::<Celsius, HectoPascal>(dp, p).into_option() {
+            Some(mw) => mw,
+            None => return none(),
+        };
 
-        let eq = |p: f64| -> Option<f64> {
+        let theta_e = match equiv_pot_temperature::<_, _, HectoPascal>(t, dp, p).into_option(){
+            Some(e) => e,
+            None => return none(),
+        };
+
+        let eq = |p: f64| -> Optioned<f64> {
             let p = HectoPascal(p);
             let Kelvin(t) = temperature_from_pot_temp::<HectoPascal, Kelvin>(theta, p);
-            let Kelvin(dp) = Kelvin::from(dew_point_from_p_and_mw::<HectoPascal>(p, mw)?);
+            let Kelvin(dp) = Kelvin::from(match dew_point_from_p_and_mw::<HectoPascal>(p, mw).into_option(){
+                Some(dp) => dp,
+                None => return none(),
+            });
 
-            Some(t - dp)
+            some(t - dp)
         };
 
         // Search between 1060 and 300 hPa. If it falls outside that range, give up!
-        let first_guess = find_root(&eq, 300.0, 1060.0)?;
+        let first_guess = match find_root(&eq, 300.0, 1060.0).into_option(){
+            Some(fg) => fg,
+            None => return none(),
+        };
 
-        let eq = |p: f64| -> Option<f64> {
+        let eq = |p: f64| -> Optioned<f64> {
             let p = HectoPascal(p);
             let Kelvin(t1) = temperature_from_pot_temp::<HectoPascal, Kelvin>(theta, p);
             let Kelvin(t2) =
-                Kelvin::from(temperature_from_equiv_pot_temp_saturated_and_pressure::<
+                Kelvin::from(match temperature_from_equiv_pot_temp_saturated_and_pressure::<
                     HectoPascal,
                     Kelvin,
-                >(p, theta_e)?);
+                >(p, theta_e).into_option(){
+                    Some(t) => t,
+                    None => return none(),
+                });
 
-            Some(t1 - t2)
+            some(t1 - t2)
         };
 
         const DELTA: f64 = 10.0;
-        let lclp = if let Some(lcl) = find_root(&eq, first_guess + DELTA, first_guess - DELTA) {
+        let lclp = if let Some(lcl) = find_root(&eq, first_guess + DELTA, first_guess - DELTA).into_option() {
             lcl
         } else {
             first_guess
@@ -372,7 +400,7 @@ where
 
         debug_validate!(lclp);
 
-        Some(lclp)
+        some(lclp)
     }
 }
 
@@ -386,7 +414,7 @@ where
 ///
 /// Returns the specific humidity. (no units)
 #[inline]
-pub fn specific_humidity<DP, P>(dew_point: DP, pressure: P) -> Option<f64>
+pub fn specific_humidity<DP, P>(dew_point: DP, pressure: P) -> Optioned<f64>
 where
     DP: Temperature,
     P: Pressure,
@@ -396,13 +424,20 @@ where
     debug_validate!(dew_point, pressure);
 
     let dp = Celsius::from(dew_point);
-    let p = HectoPascal::from(pressure).into_option()?;
-    let HectoPascal(vp) = vapor_pressure_water::<Celsius>(dp)?;
+    let p = match HectoPascal::from(pressure).into_option(){
+        Some(p) => p,
+        None => return none(),
+    };
+
+    let HectoPascal(vp) = match vapor_pressure_water::<Celsius>(dp).into_option() {
+        Some(p) => p,
+        None => return none(),
+    };
 
     if vp > p {
-        None
+        none()
     } else {
-        Some(vp / p * epsilon)
+        some(vp / p * epsilon)
     }
 }
 
@@ -419,7 +454,7 @@ where
 ///
 /// Returns: The equivalent potential temperature.
 #[inline]
-pub fn equiv_pot_temperature<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Option<Kelvin>
+pub fn equiv_pot_temperature<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Optioned<Kelvin>
 where
     T: Temperature,
     DP: Temperature,
@@ -436,11 +471,15 @@ where
     let HectoPascal(naked_p) = p;
 
     const P0: f64 = 1000.0; // Reference pressure for potential temperatures.
-    let rv = mixing_ratio::<Celsius, HectoPascal>(dp, p)?;
+    let rv = match mixing_ratio::<Celsius, HectoPascal>(dp, p).into_option(){
+        Some(rv) => rv,
+        None => return none(),
+    };
+
     let pd = naked_p - vapor_pressure_water::<Celsius>(dp)?.into_option()?;
 
     if pd < 0.0 {
-        return None;
+        return none();
     }
 
     let h = rh(t, dp)?;
@@ -456,7 +495,7 @@ where
 
     debug_validate!(theta_e_val);
 
-    Some(theta_e_val)
+    some(theta_e_val)
 }
 
 /// Given the pressure and equivalent potential temperature, assume saturation and calculate the
@@ -470,7 +509,7 @@ where
 pub fn temperature_from_equiv_pot_temp_saturated_and_pressure<P, T>(
     pressure: P,
     theta_e_val: T,
-) -> Option<Celsius>
+) -> Optioned<Celsius>
 where
     P: Pressure,
     HectoPascal: From<P>,
@@ -487,7 +526,7 @@ where
             let t = Celsius(t_c);
             let Kelvin(theta_e_calc) =
                 equiv_pot_temperature::<Celsius, Celsius, HectoPascal>(t, t, p)?;
-            Some(theta_e_calc - theta_e_k)
+            some(theta_e_calc - theta_e_k)
         },
         -80.0,
         50.0,
@@ -499,7 +538,7 @@ where
 ///
 /// Returns: The wet bulb temperature.
 #[inline]
-pub fn wet_bulb<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Option<Celsius>
+pub fn wet_bulb<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Optioned<Celsius>
 where
     T: Temperature,
     DP: Temperature,
@@ -525,7 +564,7 @@ where
             let t_c = Celsius(t_c);
             let Kelvin(theta_e_calc) = equiv_pot_temperature::<_, _, HectoPascal>(t_c, t_c, p)?;
 
-            Some(theta_e_calc - theta_e_val)
+            some(theta_e_calc - theta_e_val)
         },
         dew_point_c,
         temperature_c,
@@ -540,7 +579,7 @@ where
 ///
 /// Returns: the latent heat of condensation for water in J kg<sup>-1</sup>.
 #[inline]
-pub fn latent_heat_of_condensation<T>(temperature: T) -> Option<JpKg>
+pub fn latent_heat_of_condensation<T>(temperature: T) -> Optioned<JpKg>
 where
     T: Temperature,
     Celsius: From<T>,
@@ -554,9 +593,9 @@ where
     // latent heat of sublimation, but does not exceed it. This seems very reasonable to me,
     // especially considering that a common approximation is to just us a constant value.
     if t < -100.0 || t > 60.0 {
-        None
+        none()
     } else {
-        Some(JpKg(
+        some(JpKg(
             (2500.8 - 2.36 * t + 0.0016 * t * t - 0.00006 * t * t * t) * 1000.0,
         ))
     }
@@ -568,7 +607,7 @@ where
 ///
 /// Returns the virtual temperature.
 #[inline]
-pub fn virtual_temperature<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Option<Kelvin>
+pub fn virtual_temperature<T, DP, P>(temperature: T, dew_point: DP, pressure: P) -> Optioned<Kelvin>
 where
     T: Temperature,
     DP: Temperature,
@@ -585,12 +624,12 @@ where
     let rv = mixing_ratio::<Celsius, HectoPascal>(dp, p)?;
     let Kelvin(t_k) = potential_temperature::<HectoPascal, Celsius>(p, t);
     let vt_k = Kelvin(t_k * (1.0 + rv / epsilon) / (1.0 + rv));
-    Some(temperature_from_pot_temp::<HectoPascal, _>(vt_k, p))
+    some(temperature_from_pot_temp::<HectoPascal, _>(vt_k, p))
 }
 
 /// Find the root of an equation given values bracketing a root. Used when finding wet bulb
 /// temperature among other functions.
-fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut a: f64, mut b: f64) -> Option<f64> {
+fn find_root(f: &dyn Fn(f64) -> Optioned<f64>, mut a: f64, mut b: f64) -> Optioned<f64> {
     use std::f64;
     const MAX_IT: usize = 50;
     const EPS: f64 = 1.0e-9;
@@ -600,7 +639,7 @@ fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut a: f64, mut b: f64) -> Option<f
 
     // Check to make sure we are bracketed
     if fa * fb >= 0.0 {
-        return None;
+        return none();
     }
 
     if fa.abs() < fb.abs() {
@@ -663,11 +702,11 @@ fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut a: f64, mut b: f64) -> Option<f
 
         // Check for convergence and return
         if fb == 0.0 || (b - a).abs() < EPS {
-            return Some(b);
+            return some(b);
         }
     }
 
-    None
+    none()
 }
 
 #[cfg(test)]

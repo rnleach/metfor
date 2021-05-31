@@ -82,6 +82,16 @@ macro_rules! implQuantityForT {
             }
         }
 
+        impl optional::Noned for $t {
+            fn is_none(&self) -> bool {
+                self.0.is_none()
+            }
+
+            fn get_none() -> Self {
+                $t(std::f64::NAN)
+            }
+        }
+
         implNonedForQuantity!($t);
         implMulDivOpsForQuantity!($t);
         implOrdEqOpsForQuantity!($t);
@@ -113,6 +123,16 @@ macro_rules! implQuantityForDiffT {
             #[inline]
             fn into_option(self) -> Option<f64> {
                 Some(self.0)
+            }
+        }
+
+        impl optional::Noned for $t {
+            fn is_none(&self) -> bool {
+                self.0.is_none()
+            }
+
+            fn get_none() -> Self {
+                $t(std::f64::NAN)
             }
         }
 
