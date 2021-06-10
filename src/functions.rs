@@ -300,6 +300,16 @@ where
     }
 }
 
+/// Convert specific humidity into mixing ratio.
+pub fn mixing_ratio_from_specific_humidity(specific_humidity: f64) -> f64 {
+    specific_humidity / (1.0 - specific_humidity)
+}
+
+/// Convert mixing ratio into specific humidity.
+pub fn specific_humidity_from_mixing_ratio(mixing_ratio: f64) -> f64 {
+    mixing_ratio / (1.0 + mixing_ratio)
+}
+
 /// Given a specific humidity and pressure, calculate the dew point temperature. If saturation is
 /// assumed, this is also the temperature.
 #[inline]
@@ -932,6 +942,15 @@ mod test {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn test_specific_humidity_and_mixing_ratio_conversions() {
+        for sh in (0..1000).map(|i| i as f64 / 10_000.0) {
+            let mr = mixing_ratio_from_specific_humidity(sh);
+            let sh_back = specific_humidity_from_mixing_ratio(mr);
+            assert!(approx_equal(sh, sh_back, 1.0e-10));
         }
     }
 
