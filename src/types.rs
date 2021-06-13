@@ -4,6 +4,7 @@
 pub use self::helicity::*;
 pub use self::lapse_rates::*;
 pub use self::length::*;
+pub use self::power::*;
 pub use self::pressure_vertical_velocity::*;
 pub use self::pressures::*;
 pub use self::specific_energy::*;
@@ -452,6 +453,7 @@ macro_rules! double_conversion {
 mod helicity;
 mod lapse_rates;
 mod length;
+mod power;
 mod pressure_vertical_velocity;
 mod pressures;
 mod specific_energy;

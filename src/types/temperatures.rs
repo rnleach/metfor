@@ -45,10 +45,14 @@ pub struct FahrenheitDiff(pub f64);
 pub struct CelsiusDiff(pub f64);
 
 /// Temperature difference in Kelvin units.
-pub type KelvinDiff = CelsiusDiff;
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Serialize))]
+#[cfg_attr(feature = "use_serde", derive(serde_derive::Deserialize))]
+pub struct KelvinDiff(pub f64);
 
 impl TempDiff for FahrenheitDiff {}
 impl TempDiff for CelsiusDiff {}
+impl TempDiff for KelvinDiff {}
 
 macro_rules! implQuantityForT {
     ($t:tt) => {
@@ -121,6 +125,7 @@ macro_rules! implQuantityForDiffT {
 }
 implQuantityForDiffT!(FahrenheitDiff);
 implQuantityForDiffT!(CelsiusDiff);
+implQuantityForDiffT!(KelvinDiff);
 
 impl<T> Sub<T> for Celsius
 where
@@ -174,13 +179,13 @@ where
 
 impl<T> Add<T> for Kelvin
 where
-    CelsiusDiff: From<T>,
+    KelvinDiff: From<T>,
 {
     type Output = Kelvin;
 
     #[inline]
     fn add(self, rhs: T) -> Self::Output {
-        let rhs = CelsiusDiff::from(rhs);
+        let rhs = KelvinDiff::from(rhs);
         Self::Output::pack(self.unpack() + rhs.unpack())
     }
 }
@@ -233,6 +238,15 @@ where
     }
 }
 
+impl Div<Kelvin> for KelvinDiff {
+    type Output = f64;
+
+    #[inline]
+    fn div(self, rhs: Kelvin) -> Self::Output {
+        self.unpack() / rhs.unpack()
+    }
+}
+
 impl Div<Kelvin> for CelsiusDiff {
     type Output = f64;
 
@@ -247,6 +261,8 @@ double_conversion!(Kelvin, Fahrenheit, 1.8, 273.15 + 32.0, 1.0);
 double_conversion!(Celsius, Kelvin, 1.0, 273.15, 1.0);
 
 double_conversion!(CelsiusDiff, FahrenheitDiff, 1.8, 0.0, 1.0);
+double_conversion!(KelvinDiff, FahrenheitDiff, 1.8, 0.0, 1.0);
+double_conversion!(CelsiusDiff, KelvinDiff, 1.0, 0.0, 1.0);
 
 #[cfg(test)]
 mod test {
@@ -260,22 +276,22 @@ mod test {
         assert!(approx_equal(
             Kelvin::from(Celsius(-10.0)),
             Kelvin(263.15),
-            CelsiusDiff(TOL)
+            KelvinDiff(TOL)
         ));
         assert!(approx_equal(
             Kelvin::from(Celsius(0.0)),
             Kelvin(273.15),
-            CelsiusDiff(TOL)
+            KelvinDiff(TOL)
         ));
         assert!(approx_equal(
             Kelvin::from(Celsius(10.0)),
             Kelvin(283.15),
-            CelsiusDiff(TOL)
+            KelvinDiff(TOL)
         ));
         assert!(approx_equal(
             Kelvin::from(Celsius(-273.15)),
             Kelvin(0.0),
-            CelsiusDiff(TOL)
+            KelvinDiff(TOL)
         ));
         assert!(Kelvin::from(Celsius(-300.0)).into_option().is_none());
     }

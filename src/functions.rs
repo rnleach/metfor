@@ -28,7 +28,7 @@ where
 
     let HectoPascal(p) = HectoPascal::from(pressure);
     let Kelvin(t) = Kelvin::from(temperature);
-    let theta = t * f64::powf(1000.0 / p, Rd / cp);
+    let theta = t * f64::powf(1000.0 / p, Rd / cpd);
     let theta = Kelvin(theta);
 
     debug_validate!(theta);
@@ -53,7 +53,7 @@ where
 
     let HectoPascal(p) = HectoPascal::from(pressure);
     let Kelvin(theta) = Kelvin::from(theta);
-    let t = theta * f64::powf(p / 1000.0, Rd / cp);
+    let t = theta * f64::powf(p / 1000.0, Rd / cpd);
     let t = Kelvin(t);
 
     debug_validate!(t);
@@ -300,16 +300,6 @@ where
     }
 }
 
-/// Convert specific humidity into mixing ratio.
-pub fn mixing_ratio_from_specific_humidity(specific_humidity: f64) -> f64 {
-    specific_humidity / (1.0 - specific_humidity)
-}
-
-/// Convert mixing ratio into specific humidity.
-pub fn specific_humidity_from_mixing_ratio(mixing_ratio: f64) -> f64 {
-    mixing_ratio / (1.0 + mixing_ratio)
-}
-
 /// Given a specific humidity and pressure, calculate the dew point temperature. If saturation is
 /// assumed, this is also the temperature.
 #[inline]
@@ -325,6 +315,16 @@ where
 
     let vp = HectoPascal(q * p / epsilon);
     dew_point_from_vapor_pressure_water::<HectoPascal>(vp)
+}
+
+/// Convert specific humidity into mixing ratio.
+pub fn mixing_ratio_from_specific_humidity(specific_humidity: f64) -> f64 {
+    specific_humidity / (1.0 - specific_humidity)
+}
+
+/// Convert mixing ratio into specific humidity.
+pub fn specific_humidity_from_mixing_ratio(mixing_ratio: f64) -> f64 {
+    mixing_ratio / (1.0 + mixing_ratio)
 }
 
 /// Calculate the temperature and pressure at the lifting condensation level (LCL).
@@ -472,13 +472,13 @@ where
 
     let h = rh(t, dp)?;
 
-    let JpKg(lv) = latent_heat_of_condensation(t)?;
+    let JpKg(lv) = latent_heat_of_condensation_vaporization(t)?;
 
     let theta_e_val = Kelvin(
         naked_tk
-            * f64::powf(P0 / pd, Rd / cp)
-            * f64::powf(h, -rv * (Rv / cp))
-            * f64::exp(lv * rv / cp.unpack() / naked_tk),
+            * f64::powf(P0 / pd, Rd / cpd)
+            * f64::powf(h, -rv * (Rv / cpd))
+            * f64::exp(lv * rv / cpd.unpack() / naked_tk),
     );
 
     debug_validate!(theta_e_val);
@@ -560,14 +560,14 @@ where
     .map(Celsius)
 }
 
-/// Latent heat of condensation for water.
+/// Latent heat of condensation/vaporization for water.
 ///
 /// Polynomial curve fit to Table 2.1. R. R. Rogers; M. K. Yau (1989). A Short Course in Cloud
 /// Physics (3rd ed.). Pergamon Press. p. 16. ISBN 0-7506-3215-1.
 ///
 /// Returns: the latent heat of condensation for water in J kg<sup>-1</sup>.
 #[inline]
-pub fn latent_heat_of_condensation<T>(temperature: T) -> Option<JpKg>
+pub fn latent_heat_of_condensation_vaporization<T>(temperature: T) -> Option<JpKg>
 where
     T: Temperature,
     Celsius: From<T>,
@@ -615,9 +615,77 @@ where
     Some(temperature_from_pot_temp::<HectoPascal, _>(vt_k, p))
 }
 
+/// Calculate the Pyrocumulonimbus Firepower Threshold (PFT).
+///
+/// Output is in Giga Watts. The first reference below (Tory & Kepert, 2021) has most of the
+/// details about how to calculate the PFT, the other paper (Tory et. al, 2018) outlines the model
+/// in general.
+///
+/// # References
+///
+/// Tory, K. J., & Kepert, J. D. (2021). Pyrocumulonimbus Firepower Threshold: Assessing the
+///     Atmospheric Potential for pyroCb, Weather and Forecasting, 36(2), 439-456. Retrieved Jun 2,
+///     2021, from https://journals.ametsoc.org/view/journals/wefo/36/2/WAF-D-20-0027.1.xml
+///
+/// Tory, K. J., Thurston, W., & Kepert, J. D. (2018). Thermodynamics of Pyrocumulus: A Conceptual
+///     Study, Monthly Weather Review, 146(8), 2579-2598. Retrieved Jun 2, 2021, from
+///     https://journals.ametsoc.org/view/journals/mwre/146/8/mwr-d-17-0377.1.xml
+///
+/// # Arguments
+///  - z_fc is the height above ground of the level of free convection. Equation 25, Tory & Kepert
+///    (2021).
+///  - p_fc is the pressure at z_fc. Equation 28, Tory & Kepert (2021).
+///  - mean_wind is the magnitude of the mean velocity (vector average). Equation 25, Tory & Kepert
+///    (2021).
+///  - theta_diff is the difference between the mixed layer potential temperature and the parcel
+///    potential temperature at the level of free convection. Equation 25, Tory & Kepert (2021).
+///  - theta_fc is the potential temperature at the level of free convection. Equation 26, Tory &
+///    Kepert (2021).
+///  - p_sfc is the surface pressure. Equation 28, Tory & Kepert (2021).
+///
+pub fn pft<H, P, S, TD, T>(
+    z_fc: H,
+    p_fc: P,
+    mean_wind: S,
+    theta_diff: TD,
+    theta_fc: T,
+    p_sfc: P,
+) -> GigaWatts
+where
+    Km: From<H>,
+    MetersPSec: From<S>,
+    KelvinDiff: From<TD>,
+    Kelvin: From<T>,
+    P: Quantity,
+    HectoPascal: From<P>,
+{
+    let z_fc_km = Km::from(z_fc).unpack();
+    let mean_wind_mps = MetersPSec::from(mean_wind).unpack();
+    let theta_diff_kd = KelvinDiff::from(theta_diff).unpack();
+    let theta_fc_k = Kelvin::from(theta_fc).unpack();
+    let p_fc_hpa = HectoPascal::from(p_fc).unpack();
+    let p_sfc_hpa = HectoPascal::from(p_sfc).unpack();
+
+    // Constant component of equation 25, from table 2 in Tory & Kepert (2021).
+    const PFT_CONST: f64 = 397.3; // JpKgpK(397.3).unpack();
+
+    // Equation 28
+    let p_c = p_sfc_hpa - (p_sfc_hpa - p_fc_hpa) / (1.0 + 0.32 * 0.4);
+
+    // Equation 26 (divide by 10 because pressure is in hPa)
+    let density =
+        p_c / 10.0 / (Rd.unpack() * theta_fc_k) * (1000.0 / p_c).powf(Rd.unpack() / cpd.unpack());
+
+    GigaWatts(PFT_CONST * density * z_fc_km * z_fc_km * mean_wind_mps * theta_diff_kd)
+}
+
 /// Find the root of an equation given values bracketing a root. Used when finding wet bulb
 /// temperature among other functions.
-fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut a: f64, mut b: f64) -> Option<f64> {
+///
+/// I've exported this function because I use it in some closely related downstream crates, but
+/// it's not a documented part of the API, so it isn't considered when breaking versions.
+#[doc(hidden)]
+pub fn find_root(f: &dyn Fn(f64) -> Option<f64>, mut a: f64, mut b: f64) -> Option<f64> {
     use std::f64;
     const MAX_IT: usize = 50;
     const EPS: f64 = 1.0e-9;
@@ -709,7 +777,7 @@ mod test {
         for celsius in temperatures() {
             let kelvin = Kelvin::from(celsius);
             let theta = potential_temperature(HectoPascal(1000.0), celsius);
-            assert!(approx_equal(kelvin, theta, CelsiusDiff(TOL)));
+            assert!(approx_equal(kelvin, theta, KelvinDiff(TOL)));
         }
     }
 
@@ -840,7 +908,7 @@ mod test {
                             let k = Kelvin::from(t);
                             assert!(p_lcl <= p);
                             if t == dp {
-                                assert!(approx_equal(t_lcl, k, CelsiusDiff(0.001)));
+                                assert!(approx_equal(t_lcl, k, KelvinDiff(0.001)));
                             }
 
                             // Check for valid values

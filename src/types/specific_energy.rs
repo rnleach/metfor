@@ -1,6 +1,6 @@
 //! Specific energy units (energy per unit mass)
 use crate::types::{
-    temperatures::{CelsiusDiff, Kelvin},
+    temperatures::{CelsiusDiff, Kelvin, KelvinDiff},
     Quantity,
 };
 use std::cmp::Ordering;
@@ -78,6 +78,15 @@ impl Mul<CelsiusDiff> for JpKgpK {
 
     fn mul(self, rhs: CelsiusDiff) -> JpKg {
         let diff: CelsiusDiff = rhs.into();
+        JpKg(self.0 * diff.unpack())
+    }
+}
+
+impl Mul<KelvinDiff> for JpKgpK {
+    type Output = JpKg;
+
+    fn mul(self, rhs: KelvinDiff) -> JpKg {
+        let diff: KelvinDiff = rhs.into();
         JpKg(self.0 * diff.unpack())
     }
 }
