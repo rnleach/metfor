@@ -672,11 +672,13 @@ where
     // Equation 28
     let p_c = p_sfc_hpa - (p_sfc_hpa - p_fc_hpa) / (1.0 + 0.32 * 0.4);
 
-    // Equation 26 (divide by 10 because pressure is in hPa)
+    // Equation 26 - multiply by 100 to convert hPa to Pa, so density is in kg / m^3
     let density =
-        p_c / 10.0 / (Rd.unpack() * theta_fc_k) * (1000.0 / p_c).powf(Rd.unpack() / cpd.unpack());
+        (100.0 * p_c) / (Rd.unpack() * theta_fc_k) * (1000.0 / p_c).powf(Rd.unpack() / cpd.unpack());
 
-    GigaWatts(PFT_CONST * density * z_fc_km * z_fc_km * mean_wind_mps * theta_diff_kd)
+    // Divide by 1000.0 to get Gigawatts. Since the heights z_fc are in km and squared, we've
+    // already 'divided' by 10^6.
+    GigaWatts(PFT_CONST * density * z_fc_km * z_fc_km * mean_wind_mps * theta_diff_kd / 1000.0)
 }
 
 /// Find the root of an equation given values bracketing a root. Used when finding wet bulb
