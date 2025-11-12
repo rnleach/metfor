@@ -395,6 +395,8 @@ where
         let mw = mixing_ratio::<Celsius, HectoPascal>(dp, p)?;
         let theta_e = equiv_pot_temperature::<_, _, HectoPascal>(t, dp, p)?;
 
+        // Search between 1060 and 300 hPa. If it falls outside that range, give up! This is a
+        // quick search using an approximation that is simple and should be very fast to compute.
         let eq = |p: f64| -> Option<f64> {
             let p = HectoPascal(p);
             let Kelvin(t) = temperature_from_pot_temp::<HectoPascal, Kelvin>(theta, p);
@@ -403,9 +405,11 @@ where
             Some(t - dp)
         };
 
-        // Search between 1060 and 300 hPa. If it falls outside that range, give up!
         let first_guess = find_root(&eq, 300.0, 1060.0)?;
 
+        // Now search for the pressure where the equivalent potential temperature and potential
+        // temperature of the parcel are equal, assuming saturation. This is more robust, but also
+        // more computationally expensive.
         let eq = |p: f64| -> Option<f64> {
             let p = HectoPascal(p);
             let Kelvin(t1) = temperature_from_pot_temp::<HectoPascal, Kelvin>(theta, p);
@@ -474,12 +478,16 @@ where
 
     let JpKg(lv) = latent_heat_of_condensation_vaporization(t)?;
 
-    let theta_e_val = Kelvin(
-        naked_tk
-            * f64::powf(P0 / pd, Rd / cpd)
-            * f64::powf(h, -rv * (Rv / cpd))
-            * f64::exp(lv * rv / cpd.unpack() / naked_tk),
-    );
+    let theta_e_val = naked_tk
+        * f64::powf(P0 / pd, Rd / cpd)
+        * f64::powf(h, -rv * (Rv / cpd))
+        * f64::exp(lv * rv / cpd.unpack() / naked_tk);
+
+    if theta_e_val.is_infinite() {
+        return None;
+    }
+
+    let theta_e_val = Kelvin(theta_e_val);
 
     debug_validate!(theta_e_val);
 
@@ -509,6 +517,11 @@ where
     let p = HectoPascal::from(pressure);
     let Kelvin(theta_e_k) = Kelvin::from(theta_e_val);
 
+    let max_t = dew_point_from_vapor_pressure_water::<HectoPascal>(p)
+        .map(Celsius::from)
+        .unwrap_or(Celsius(50.0))
+        .unpack();
+
     find_root(
         &|t_c| {
             let t = Celsius(t_c);
@@ -516,8 +529,8 @@ where
                 equiv_pot_temperature::<Celsius, Celsius, HectoPascal>(t, t, p)?;
             Some(theta_e_calc - theta_e_k)
         },
-        -80.0,
-        50.0,
+        -80.0, // -80 because that is the lowest temperature for which the vapor pressure formulas work.
+        max_t, // 50 (see above) because that is the highest temperature for the vapor pressures formulas to work.
     )
     .map(Celsius)
 }
@@ -807,7 +820,7 @@ mod test {
     #[test]
     fn test_vapor_pressure_liquid_water_there_and_back() {
         for dp in [
-            -80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 49.0,
+            -80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 10.0, 20.0, 40.0, 49.0, 49.999999,
         ]
         .iter()
         .map(|&dp| Celsius(dp))
@@ -1031,12 +1044,7 @@ mod test {
                 if let Some(t_back) = equiv_pot_temperature(t, t, p).and_then(|theta_es| {
                     temperature_from_equiv_pot_temp_saturated_and_pressure(p, theta_es)
                 }) {
-                    println!(
-                        "{:?} {:?} {:?}",
-                        t,
-                        t_back,
-                        (t.unwrap() - t_back.unwrap()).abs()
-                    );
+                    println!("{:?}: {:?} {:?} {:?}", p, t, t_back, (t.unwrap() - t_back.unwrap()).abs());
                     assert!(approx_equal(t, t_back, CelsiusDiff(1.0e-6)));
                 }
             }
